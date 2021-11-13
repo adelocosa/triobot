@@ -15,7 +15,9 @@ class HTTPRequest:
     def __init__(self):
         self.response: None | httpx.Response = None
 
-    async def send(self, method: str, route: str, payload: Payload = None) -> httpx.Response:
+    async def send(
+        self, method: str, route: str, payload: Payload = None
+    ) -> httpx.Response:
         payload_format = {
             "GET": {"params": payload},
             "POST": {"json": payload},
@@ -32,7 +34,9 @@ class HTTPRequest:
         }
 
         async with httpx.AsyncClient() as http_client:
-            self.response = await http_client.request(method, url, **payload_format[method])
+            self.response = await http_client.request(
+                method, url, **payload_format[method]
+            )
         return self.response
 
     def print_response(self) -> None:
@@ -55,7 +59,9 @@ class HTTPRequest:
         method = "PUT"
         return await self.send(method, route, payload)
 
-    async def get_channel(self, channel_id: int, payload: Payload = None) -> httpx.Response:
+    async def get_channel(
+        self, channel_id: int, payload: Payload = None
+    ) -> httpx.Response:
         route = f"/channels/{channel_id}"
         method = "GET"
         return await self.send(method, route, payload)
@@ -119,7 +125,9 @@ class HTTPRequest:
         method = "PUT"
         return await self.send(method, route, payload)
 
-    async def get_guild_roles(self, guild_id: int, payload: Payload = None) -> httpx.Response:
+    async def get_guild_roles(
+        self, guild_id: int, payload: Payload = None
+    ) -> httpx.Response:
         route = f"/guilds/{guild_id}/roles"
         method = "GET"
         return await self.send(method, route, payload)

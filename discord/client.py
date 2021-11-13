@@ -16,5 +16,5 @@ class Client:
         while True:
             self.connection = GatewayConnection(self, self.TOKEN)
             trio.run(self.connection.connect)
-            print(f'disconnected! reconnecting in {self.delay} seconds')
+            print(f"disconnected! reconnecting in {self.delay} seconds")
             time.sleep(self.delay)

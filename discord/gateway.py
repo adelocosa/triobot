@@ -8,8 +8,12 @@ from pprint import pprint
 from typing import TYPE_CHECKING, Any
 
 import trio
-from trio_websocket import (ConnectionClosed, HandshakeError,
-                            WebSocketConnection, open_websocket_url)
+from trio_websocket import (
+    ConnectionClosed,
+    HandshakeError,
+    WebSocketConnection,
+    open_websocket_url,
+)
 
 if TYPE_CHECKING:
     from .client import Client
