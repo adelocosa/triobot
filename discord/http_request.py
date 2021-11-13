@@ -33,7 +33,7 @@ class HTTPRequest:
             "User-Agent": "mumbot (http://mumblecrew.com, 1.0)",
         }
 
-        async with httpx.AsyncClient() as http_client:
+        async with httpx.AsyncClient(headers=headers) as http_client:
             self.response = await http_client.request(
                 method, url, **payload_format[method]
             )
