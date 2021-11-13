@@ -1,7 +1,8 @@
-import httpx
-import pprint
 import os
-from typing import Any, TypeAlias, ClassVar
+import pprint
+from typing import Any, ClassVar, TypeAlias
+
+import httpx
 from dotenv import load_dotenv
 
 Payload: TypeAlias = None | dict[str, Any]

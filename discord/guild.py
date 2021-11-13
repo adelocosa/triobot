@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from .http_request import HTTPRequest
+
 from .emoji import Emoji
+from .http_request import HTTPRequest
 
 
 @dataclass

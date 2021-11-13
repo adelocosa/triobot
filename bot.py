@@ -1,6 +1,9 @@
-import discord
 import os
+
 from dotenv import load_dotenv
+
+import discord
+
 
 def main():
     load_dotenv()

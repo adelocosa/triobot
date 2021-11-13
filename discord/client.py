@@ -1,6 +1,9 @@
-import trio
 import time
+
+import trio
+
 from .gateway import GatewayConnection
+
 
 class Client:
     def __init__(self, TOKEN: str):
