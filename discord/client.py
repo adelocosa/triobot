@@ -25,7 +25,7 @@ class Client:
             self.connection = GatewayConnection(self, self.TOKEN)
             log.info("Attempting to connect...")
             trio.run(self.connection.connect)
-            log.warning(f"Disconnected! Reconnecting in {self.delay} seconds...")
+            log.warning(f"Disconnected! Reconnecting in {self.delay:.1f} seconds...")
             time.sleep(self.delay)
             self.increase_delay()
 
