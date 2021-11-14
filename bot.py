@@ -1,8 +1,24 @@
+import logging
 import os
 
 from dotenv import load_dotenv
 
 import discord
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+console_log = logging.StreamHandler()
+console_log.setFormatter(
+    logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
+)
+logger.addHandler(console_log)
+
+file_log = logging.FileHandler("log.txt")
+file_log.setFormatter(
+    logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
+)
+logger.addHandler(file_log)
 
 
 def main():
@@ -13,4 +29,7 @@ def main():
     bot.connect()
 
 
-main()
+try:
+    main()
+except Exception as e:
+    logger.exception("Program halted due to unhandled exception.")

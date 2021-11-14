@@ -1,3 +1,6 @@
+import inspect
+import json
+import logging
 import os
 import pprint
 from typing import Any, ClassVar, TypeAlias
@@ -6,6 +9,8 @@ import httpx
 from dotenv import load_dotenv
 
 Payload: TypeAlias = None | dict[str, Any]
+
+log = logging.getLogger(__name__)
 
 
 class HTTPRequest:
@@ -34,21 +39,14 @@ class HTTPRequest:
         }
 
         async with httpx.AsyncClient(headers=headers) as http_client:
+            log.info(f"Sending HTTP {inspect.stack()[1][3]} request.")
+            log.debug(json.dumps(payload, indent=4))
             self.response = await http_client.request(
                 method, url, **payload_format[method]
             )
+            log.info(f"Request returned status {self.response.status_code}.")
+            log.debug(json.dumps(self.response.json(), indent=4))
         return self.response
-
-    def print_response(self) -> None:
-        if self.response:
-            print(f"status code: {self.response.status_code}")
-            print("response:")
-            pprint.pprint(self.response.json())
-
-    def print_headers(self) -> None:
-        if self.response:
-            print(f"status code: {self.response.status_code}")
-            pprint.pprint(dict(self.response.headers))
 
     # channel requests
 

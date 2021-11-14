@@ -1,8 +1,11 @@
+import logging
 import time
 
 import trio
 
 from .gateway import GatewayConnection
+
+log = logging.getLogger(__name__)
 
 
 class Client:
@@ -16,5 +19,5 @@ class Client:
         while True:
             self.connection = GatewayConnection(self, self.TOKEN)
             trio.run(self.connection.connect)
-            print(f"disconnected! reconnecting in {self.delay} seconds")
+            log.warning(f"disconnected! reconnecting in {self.delay} seconds")
             time.sleep(self.delay)

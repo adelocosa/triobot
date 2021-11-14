@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import random
 import zlib
 from enum import IntEnum
@@ -17,6 +18,8 @@ from trio_websocket import (
 
 if TYPE_CHECKING:
     from .client import Client
+
+log = logging.getLogger(__name__)
 
 
 class Opcode(IntEnum):
@@ -73,15 +76,15 @@ class GatewayConnection:
                         )
                 except ConnectionClosed as cc:
                     reason = (
-                        "<no reason>"
+                        "No reason."
                         if cc.reason.reason is None
                         else f'"{cc.reason.reason}"'
                     )
-                    pprint(f"Closed: {cc.reason.code}/{cc.reason.name} {reason}")
+                    log.warning(f"Closed: {cc.reason.code}/{cc.reason.name} - {reason}")
                     return False
 
         except HandshakeError as e:
-            pprint(f"Connection attempt failed: {e}")
+            log.warning(f"Connection attempt failed.")
             return False
 
         return False
@@ -129,13 +132,16 @@ class GatewayConnection:
         # main receiving loop
         while True:
             raw = await self.ws.get_message()
-            decompressed = decompress(raw)
-            data: dict[str, Any] = json.loads(decompressed)
-            pprint(data)
-            opcode: int = data["op"]
-            sequence: None | int = data.get("s", None)
-            event: None | str = data.get("t", None)
-            data: dict[str, Any] = data.get("d", {})
+            decompressed = json.loads(decompress(raw))
+            opcode: int = decompressed["op"]
+            sequence: None | int = decompressed["s"]
+            event: None | str = decompressed["t"]
+            data: dict[str, Any] = decompressed.get("d", {})
+            if event:
+                log.info(f"Received {event} dispatch.")
+            else:
+                log.info(f"Received opcode {opcode} ({Opcode(opcode).name}).")
+            log.debug(json.dumps(data, indent=4))
             if sequence:
                 self.client.sequence = sequence
 
@@ -144,10 +150,10 @@ class GatewayConnection:
                 if not data["d"]:
                     self.client.sequence = None
                     self.client.session_id = None
-                await self.ws.aclose(reason="Received opcode 9: INVALID_SESSION")
+                await self.ws.aclose(reason="Received opcode 9 (INVALID_SESSION).")
 
             elif opcode == Opcode.RECONNECT:
-                await self.ws.aclose(reason="Received opcode 7: RECONNECT")
+                await self.ws.aclose(reason="Received opcode 7 (RECONNECT).")
 
             elif opcode == Opcode.HEARTBEAT:
                 await send_gateway_message.send(self.build_heartbeat())
@@ -174,7 +180,9 @@ class GatewayConnection:
         while True:
             async with send_queue:
                 async for message in send_queue:
-                    pprint(message)
+                    log.info(
+                        f"Sending opcode {message['op']} ({Opcode(message['op']).name})."
+                    )
                     payload = json.dumps(message)
                     await self.ws.send_message(payload)
 
