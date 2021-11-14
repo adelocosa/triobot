@@ -58,29 +58,29 @@ class GatewayConnection:
                 try:
                     async with trio.open_nursery() as nursery:
                         # memory channel to initialize heartbeat function with correct interval
-                        (
-                            send_hb_interval,
-                            receive_hb_interval,
-                        ) = trio.open_memory_channel(0)
+                        send_hb_info, receive_hb_info = trio.open_memory_channel(0)
 
                         # memory channel to communicate messages to be sent to the gateway
                         send_gateway_message, send_queue = trio.open_memory_channel(5)
                         nursery.start_soon(
                             self.receiver,
-                            send_hb_interval,
+                            send_hb_info,
                             send_gateway_message.clone(),
                         )
                         nursery.start_soon(self.sender, send_queue)
                         nursery.start_soon(
-                            self.heartbeat, receive_hb_interval, send_gateway_message
+                            self.heartbeat, receive_hb_info, send_gateway_message
                         )
+
                 except ConnectionClosed as cc:
                     reason = (
                         "No reason."
                         if cc.reason.reason is None
                         else f'"{cc.reason.reason}"'
                     )
-                    log.warning(f"Closed: {cc.reason.code}/{cc.reason.name} - {reason}")
+                    log.warning(
+                        f"Connection closed: {cc.reason.code}/{cc.reason.name} - {reason}"
+                    )
                     return False
 
         except HandshakeError as e:
@@ -91,7 +91,7 @@ class GatewayConnection:
 
     async def receiver(
         self,
-        send_hb_interval: trio.MemorySendChannel,
+        send_hb_info: trio.MemorySendChannel,
         send_gateway_message: trio.MemorySendChannel,
     ):
         def build_identify() -> dict[str, Any]:
@@ -160,8 +160,8 @@ class GatewayConnection:
 
             elif opcode == Opcode.HELLO:
                 interval = data["heartbeat_interval"]
-                async with send_hb_interval:
-                    await send_hb_interval.send(interval)
+                async with send_hb_info:
+                    await send_hb_info.send(interval)
                 if self.client.session_id and self.client.sequence:
                     await send_gateway_message.send(build_resume())
                 else:
@@ -188,13 +188,13 @@ class GatewayConnection:
 
     async def heartbeat(
         self,
-        receive_hb_interval: trio.MemoryReceiveChannel,
+        receive_hb_info: trio.MemoryReceiveChannel,
         send_gateway_message: trio.MemorySendChannel,
     ):
         # sends regular heartbeats according to heartbeat interval received in HELLO
         # todo: close connection if heartbeat_ack isn't received
-        async with receive_hb_interval:
-            interval = await receive_hb_interval.receive() / 1000
+        async with receive_hb_info:
+            interval = await receive_hb_info.receive() / 1000
         await trio.sleep(interval * random.random())
         await send_gateway_message.send(self.build_heartbeat())
         while True:
