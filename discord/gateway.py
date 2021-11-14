@@ -56,6 +56,7 @@ class GatewayConnection:
             ) as ws:
                 self.ws: WebSocketConnection = ws
                 log.info("Connected!")
+                self.client.reset_delay()
                 try:
                     async with trio.open_nursery() as nursery:
                         # memory channel to initialize heartbeat function with correct interval
@@ -142,7 +143,7 @@ class GatewayConnection:
                 log.info(f"Received {event} dispatch.")
             else:
                 log.info(f"Received opcode {opcode} ({Opcode(opcode).name}).")
-            log.debug(json.dumps(data, indent=4))
+            log.debug(json.dumps(decompressed, indent=4))
             if sequence:
                 self.client.sequence = sequence
 
@@ -184,6 +185,7 @@ class GatewayConnection:
                     log.info(
                         f"Sending opcode {message['op']} ({Opcode(message['op']).name})."
                     )
+                    log.debug(json.dumps(message, indent=4))
                     payload = json.dumps(message)
                     await self.ws.send_message(payload)
 

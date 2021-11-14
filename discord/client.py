@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 
 import trio
@@ -9,11 +10,15 @@ log = logging.getLogger(__name__)
 
 
 class Client:
+
+    START_DELAY = 1.1
+    MAX_DELAY = 32
+
     def __init__(self, TOKEN: str):
         self.TOKEN = TOKEN
         self.sequence: None | int = None
         self.session_id: None | str = None
-        self.delay = 5  # temporary
+        self.delay = self.START_DELAY
 
     def connect(self):
         while True:
@@ -22,3 +27,13 @@ class Client:
             trio.run(self.connection.connect)
             log.warning(f"Disconnected! Reconnecting in {self.delay} seconds...")
             time.sleep(self.delay)
+            self.increase_delay()
+
+    def increase_delay(self):
+        new_delay = int(self.delay) * 2
+        if new_delay != self.MAX_DELAY:
+            new_delay += random.random()
+        self.delay = new_delay
+
+    def reset_delay(self):
+        self.delay = self.START_DELAY
