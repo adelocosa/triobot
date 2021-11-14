@@ -55,6 +55,7 @@ class GatewayConnection:
                 disconnect_timeout=5,
             ) as ws:
                 self.ws: WebSocketConnection = ws
+                log.info("Connected!")
                 try:
                     async with trio.open_nursery() as nursery:
                         # memory channel to initialize heartbeat function with correct interval

@@ -25,11 +25,14 @@ def main():
     load_dotenv()
     TOKEN = os.environ.get("BOT_TOKEN")
     assert isinstance(TOKEN, str)
+    logger.info("Token found. Initializing bot...")
     bot = discord.Client(TOKEN)
     bot.connect()
 
 
 try:
     main()
+except KeyboardInterrupt:
+    logger.info("Program halted due to keyboard interrupt.")
 except Exception as e:
-    logger.exception("Program halted due to unhandled exception.")
+    logger.exception("Program halted due to unhandled exception:")
