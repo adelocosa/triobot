@@ -1,21 +1,22 @@
 import logging
+import logging.handlers
 import os
 import sys
 from dotenv import load_dotenv
 
 import discord
 
+log_format = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
+
 console_log = logging.StreamHandler(sys.stdout)
 console_log.setLevel(logging.INFO)
-console_log.setFormatter(
-    logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
-)
+console_log.setFormatter(log_format)
 
-file_log = logging.FileHandler("debug.log")
-file_log.setLevel(logging.DEBUG)
-file_log.setFormatter(
-    logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
+file_log = logging.handlers.RotatingFileHandler(
+    "debug.log", maxBytes=10000000, backupCount=5, encoding="utf8"
 )
+file_log.setLevel(logging.DEBUG)
+file_log.setFormatter(log_format)
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
