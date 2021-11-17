@@ -2,11 +2,9 @@ import inspect
 import json
 import logging
 import os
-import pprint
 from typing import Any, ClassVar, TypeAlias
 
 import httpx
-from dotenv import load_dotenv
 
 Payload: TypeAlias = None | dict[str, Any]
 
@@ -14,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 class HTTPRequest:
-
+    TOKEN = os.environ.get("BOT_TOKEN")
     API_URL: ClassVar[str] = "https://discordapp.com/api/v9"
 
     def __init__(self):
@@ -23,6 +21,7 @@ class HTTPRequest:
     async def send(
         self, method: str, route: str, payload: Payload = None
     ) -> httpx.Response:
+        # get correct args for request based on method
         payload_format = {
             "GET": {"params": payload},
             "POST": {"json": payload},
@@ -31,11 +30,10 @@ class HTTPRequest:
             "DELETE": {},
         }
         url = self.API_URL + route
-        load_dotenv()
-        bot_token = os.environ.get("BOT_TOKEN")
+
         headers = {
-            "Authorization": f"Bot {bot_token}",
-            "User-Agent": "mumbot (http://mumblecrew.com, 1.0)",
+            "Authorization": f"Bot {self.TOKEN}",
+            "User-Agent": "mumbot (http://mumblecrew.com, 2.0)",
         }
 
         async with httpx.AsyncClient(headers=headers) as http_client:
@@ -108,6 +106,11 @@ class HTTPRequest:
         route = f"/guilds/{guild_id}"
         method = "GET"
         return await self.send(method, route, payload)
+
+    async def get_guild_member(self, guild_id: int, user_id: int) -> httpx.Response:
+        route = f"/guilds/{guild_id}/members/{user_id}"
+        method = "GET"
+        return await self.send(method, route)
 
     async def list_guild_members(
         self, guild_id: int, payload: Payload = None
