@@ -5,7 +5,6 @@ import logging
 import random
 import zlib
 from enum import IntEnum
-from pprint import pprint
 from typing import TYPE_CHECKING, Any
 
 import trio
