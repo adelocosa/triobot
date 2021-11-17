@@ -1,14 +1,16 @@
 import logging
 import logging.handlers
 import os
-import sys
+
 from dotenv import load_dotenv
+
+load_dotenv()
 
 import discord
 
 log_format = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
 
-console_log = logging.StreamHandler(sys.stdout)
+console_log = logging.StreamHandler()
 console_log.setLevel(logging.INFO)
 console_log.setFormatter(log_format)
 
@@ -25,7 +27,6 @@ log.addHandler(file_log)
 
 
 def main():
-    load_dotenv()
     TOKEN = os.environ.get("BOT_TOKEN")
     assert isinstance(TOKEN, str)
     log.info("Token found. Initializing bot...")
