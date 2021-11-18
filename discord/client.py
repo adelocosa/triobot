@@ -5,6 +5,7 @@ import time
 import trio
 
 from .gateway import GatewayConnection
+from .guild import Guild
 
 log = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class Client:
         self.sequence: None | int = None
         self.session_id: None | str = None
         self.delay = self.START_DELAY
+        self.guilds: dict[int, Guild] = {}
 
     def connect(self):
         while True:
