@@ -1,12 +1,15 @@
 import logging
 import random
 import time
+from typing import TYPE_CHECKING
 
 import trio
 
 from .gateway import GatewayConnection
-from .guild import Guild
-from .user import User
+
+if TYPE_CHECKING:
+    from .guild import Guild
+    from .user import User
 
 log = logging.getLogger(__name__)
 
