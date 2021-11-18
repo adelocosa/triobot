@@ -12,6 +12,7 @@ class Emoji:
         self.name: str = data["name"]
         self.id: int = int(data["id"])
         self.animated: bool = data.get("animated", False)
+        self.available: bool = data.get("available", False)
 
     def __str__(self) -> str:
         if self.animated:
