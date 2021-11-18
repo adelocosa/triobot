@@ -6,7 +6,6 @@ import random
 import zlib
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any
-from .event import Event
 
 import trio
 from trio_websocket import (
@@ -15,6 +14,8 @@ from trio_websocket import (
     WebSocketConnection,
     open_websocket_url,
 )
+
+from .event import Event
 
 if TYPE_CHECKING:
     from .client import Client
@@ -47,7 +48,7 @@ class GatewayConnection:
         message = {"op": 1, "d": self.client.sequence}
         return message
 
-    async def connect(self) -> bool:
+    async def connect(self) -> None:
         try:
             async with open_websocket_url(
                 "wss://gateway.discord.gg/?v=9&encoding=json&compress=zlib-stream",
@@ -83,13 +84,13 @@ class GatewayConnection:
                     log.warning(
                         f"Connection closed: {cc.reason.code}/{cc.reason.name} - {reason}"
                     )
-                    return False
+                    return
 
         except HandshakeError as e:
             log.warning(f"Connection attempt failed.")
-            return False
+            return
 
-        return False
+        return
 
     async def receiver(
         self,
