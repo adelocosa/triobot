@@ -19,13 +19,17 @@ class Guild:
         self.client = client
         self.id: str = data["id"]
         self.name: str = data["name"]
-        self.emojis: dict[str | int, Emoji] = self._parse_emojis(data["emojis"])
-        self.members: dict[int, GuildMember] = self._parse_members(data["members"])
-        self.channels: dict[int, Channel] = self._parse_channels(data["channels"])
+        self.emojis: dict[str, Emoji] = self.parse_emojis(data["emojis"])
+        self.members: dict[str, GuildMember] = self.parse_members(data["members"])
+        self.channels: dict[str, Channel] = self.parse_channels(data["channels"])
         if data.get("presences", None):
-            self._update_activities(data["presences"])
+            self.update_activities(data["presences"])
 
-    def _parse_emojis(self, emoji_list: list[dict]) -> dict[str | int, Emoji]:
+    def update(self, data: dict[str, Any]):
+        self.name: str = data["name"]
+        log.debug(f"Updated guild {self.id} ({self.name}).")
+
+    def parse_emojis(self, emoji_list: list[dict]) -> dict[str, Emoji]:
         # emoji objects are indexed by both name and id because both seem useful
         emojis = {}
         for emoji_data in emoji_list:
@@ -34,31 +38,31 @@ class Guild:
             emojis[emoji.id] = emoji
         return emojis
 
-    def _parse_members(self, member_list: list[dict]) -> dict[int, GuildMember]:
+    def parse_members(self, member_list: list[dict]) -> dict[str, GuildMember]:
         members = {}
         for member_data in member_list:
             member = GuildMember(self, member_data)
             members[member.user.id] = member
         return members
 
-    def _parse_channels(self, channel_list: list[dict]) -> dict[int, Channel]:
+    def parse_channels(self, channel_list: list[dict]) -> dict[str, Channel]:
         channels = {}
         for channel_data in channel_list:
             channel = Channel(self, channel_data)
             channels[channel.id] = channel
         return channels
 
-    def _update_activities(self, presence_list: list[dict]) -> None:
+    def update_activities(self, presence_list: list[dict]) -> None:
         for presence_data in presence_list:
             if presence_data["activities"]:
                 user = self.client.users[presence_data["user"]["id"]]
                 user.update_activities(presence_data["activities"])
         return
 
-    async def request_emojis(self) -> dict[str | int, Emoji]:
+    async def request_emojis(self) -> dict[str, Emoji]:
         request = HTTPRequest()
         response = await request.list_guild_emojis(self.id)
         if response.status_code != 200:
             return self.emojis
-        self.emojis = self._parse_emojis(response.json())
+        self.emojis = self.parse_emojis(response.json())
         return self.emojis
