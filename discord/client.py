@@ -44,3 +44,9 @@ class Client:
 
     def reset_delay(self):
         self.delay = self.START_DELAY
+
+    def clear_state(self):
+        self.sequence = None
+        self.session_id = None
+        self.guilds = {}
+        self.users = {}

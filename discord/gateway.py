@@ -150,8 +150,7 @@ class GatewayConnection:
             if opcode == Opcode.INVALID_SESSION:
                 # if d = True, resume | if d = False, identify
                 if not data:
-                    self.client.sequence = None
-                    self.client.session_id = None
+                    self.client.clear_state()
                 await self.ws.aclose(reason="Received opcode 9 (INVALID_SESSION).")
 
             elif opcode == Opcode.RECONNECT:
