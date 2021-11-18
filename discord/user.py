@@ -32,6 +32,10 @@ class User:
         self.activities: list[Activity] = []
         log.debug(f"Created user {self.id} ({self.username}).")
 
+    def update(self, data: dict[str, Any]):
+        self.username: str = data["username"]
+        self.number: str = data["discriminator"]
+                
     def update_activities(self, data: list[dict[str, Any]]) -> None:
         activities = []
         for activity in data:

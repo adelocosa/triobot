@@ -28,3 +28,12 @@ class Channel:
         log.debug(
             f"Added channel {self.id} ({self.name}) to guild {self.guild.id} ({self.guild.name})."
         )
+
+    def update(self, data: dict[str, Any]):
+        self.position = data.get("position", self.position)
+        self.name = data.get("name", self.name)
+        self.topic = data.get("topic", self.topic)
+        self.bitrate = data.get("bitrate", self.bitrate)
+        log.debug(
+            f"Updated channel {self.id} ({self.name}) in guild {self.guild.id} ({self.guild.name})."
+        )
