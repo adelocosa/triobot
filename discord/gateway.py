@@ -140,11 +140,9 @@ class GatewayConnection:
             sequence: None | int = decompressed["s"]
             event_name: None | str = decompressed["t"]
             data: dict[str, Any] = decompressed.get("d", {})
-            if event_name:
-                log.info(f"Received {event_name} dispatch.")
-            else:
+            if opcode != Opcode.DISPATCH:
                 log.info(f"Received opcode {opcode} ({Opcode(opcode).name}).")
-            log.debug(json.dumps(decompressed, indent=4))
+                log.debug(json.dumps(decompressed, indent=4))
             if sequence:
                 self.client.sequence = sequence
 
