@@ -1,12 +1,12 @@
 from __future__ import annotations
-import logging
 
-from typing import Any, TYPE_CHECKING
+import logging
+from typing import TYPE_CHECKING, Any
 
 from .channel import Channel
 from .emoji import Emoji
-from .member import GuildMember
 from .http_request import HTTPRequest
+from .member import GuildMember
 
 if TYPE_CHECKING:
     from .client import Client
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 class Guild:
     def __init__(self, client: Client, data: dict[str, Any]):
         self.client = client
-        self.id: int = data["id"]
+        self.id: str = data["id"]
         self.name: str = data["name"]
         self.emojis: dict[str | int, Emoji] = self._parse_emojis(data["emojis"])
         self.members: dict[int, GuildMember] = self._parse_members(data["members"])
@@ -51,7 +51,7 @@ class Guild:
     def _update_activities(self, presence_list: list[dict]) -> None:
         for presence_data in presence_list:
             if presence_data["activities"]:
-                user = self.client.users[int(presence_data["user"]["id"])]
+                user = self.client.users[presence_data["user"]["id"]]
                 user.update_activities(presence_data["activities"])
         return
 

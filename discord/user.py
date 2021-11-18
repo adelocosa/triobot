@@ -26,9 +26,9 @@ class ActivityType(IntEnum):
 
 class User:
     def __init__(self, data: dict[str, Any]):
-        self.id: int = int(data["id"])
+        self.id: str = data["id"]
         self.username: str = data["username"]
-        self.number: int = int(data["discriminator"])
+        self.number: str = data["discriminator"]
         self.activities: list[Activity] = []
         log.debug(f"Created user {self.id} ({self.username}).")
 
