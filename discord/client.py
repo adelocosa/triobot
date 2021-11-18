@@ -6,6 +6,7 @@ import trio
 
 from .gateway import GatewayConnection
 from .guild import Guild
+from .user import User
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class Client:
         self.session_id: None | str = None
         self.delay = self.START_DELAY
         self.guilds: dict[int, Guild] = {}
+        self.users: dict[int, User] = {}
 
     def connect(self):
         while True:
