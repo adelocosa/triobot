@@ -25,5 +25,5 @@ class Event:
         self.client.session_id = self.data["session_id"]
 
     def handle_guild_create(self):
-        guild = Guild(self.data)
+        guild = Guild(self.client, self.data)
         self.client.guilds[guild.id] = guild
