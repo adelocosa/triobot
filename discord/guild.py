@@ -8,10 +8,10 @@ class Guild:
         self.id: int = data["id"]
         self.emojis: dict[str | int, Emoji] = self._parse_emojis(data["emojis"])
 
-    def _parse_emojis(self, emoji_data) -> dict[str | int, Emoji]:
+    def _parse_emojis(self, emoji_list: list[dict]) -> dict[str | int, Emoji]:
         # emoji objects are indexed by both name and id because both seem useful
         emojis = {}
-        for emoji_data in emoji_data:
+        for emoji_data in emoji_list:
             emoji = Emoji(self, emoji_data)
             emojis[emoji.name] = emoji
             emojis[emoji.id] = emoji
