@@ -4,7 +4,9 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any
 
+from .channel import Channel
 from .guild import Guild
+from .member import GuildMember
 from .user import User
 
 if TYPE_CHECKING:
@@ -35,6 +37,67 @@ class Event:
         self.client.user = User(self.data["user"])
         self.client.users[self.client.user.id] = self.client.user
 
+    def handle_channel_create(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        channel = Channel(guild, self.data)
+        guild.channels[channel.id] = channel
+
+    def handle_channel_update(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        channel = guild.channels[self.data["id"]]
+        channel.update(self.data)
+
+    def handle_channel_delete(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        channel = guild.channels[self.data["id"]]
+        del guild.channels[channel.id]
+        log.debug(
+            f"Removed channel {channel.id} ({channel.name} from guild {guild.id} ({guild.name})."
+        )
+
     def handle_guild_create(self):
         guild = Guild(self.client, self.data)
         self.client.guilds[guild.id] = guild
+
+    def handle_guild_update(self):
+        guild = self.client.guilds[self.data["id"]]
+        guild.update(self.data)
+
+    def handle_guild_delete(self):
+        guild = self.client.guilds[self.data["id"]]
+        del self.client.guilds[guild.id]
+        log.debug(f"Removed guild {guild.id} ({guild.name}).")
+
+    def handle_guild_emojis_update(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        guild.emojis = guild.parse_emojis(self.data["emojis"])
+
+    def handle_guild_member_add(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        member = GuildMember(guild, self.data)
+        guild.members[member.user.id] = member
+
+    def handle_guild_member_remove(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        member = guild.members[self.data["user"]["id"]]
+        del guild.members[self.data["user"]["id"]]
+        log.debug(
+            f"Removed member {member.user.id} ({str(member)}) from guild {guild.id} ({guild.name})."
+        )
+
+    def handle_guild_member_update(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        member = guild.members[self.data["user"]["id"]]
+        member.update(self.data)
+
+    def handle_presence_update(self):
+        user = self.client.users[self.data["user"]["id"]]
+        user.update_activities(self.data["activites"])
+
+    def handle_user_update(self):
+        user = self.client.users[self.data["user"]["id"]]
+        user.update(self.data)
+
+    def handle_voice_state_update(self):
+        # todo: track streaming status (can be wacky)
+        pass
