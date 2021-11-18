@@ -14,8 +14,6 @@ log = logging.getLogger(__name__)
 class GuildMember:
     def __init__(self, guild: Guild, data: dict[str, Any]):
         self.guild = guild
-        self.muted: bool = data["mute"]
-        self.deafened: bool = data["deaf"]
         self.nick: None | str = data.get("nick", None)
         if data["user"]["id"] not in self.guild.client.users:
             user = User(data["user"])
