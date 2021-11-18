@@ -6,6 +6,7 @@ import random
 import zlib
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any
+from .event import Event
 
 import trio
 from trio_websocket import (
@@ -136,10 +137,10 @@ class GatewayConnection:
             decompressed = json.loads(decompress(raw))
             opcode: int = decompressed["op"]
             sequence: None | int = decompressed["s"]
-            event: None | str = decompressed["t"]
+            event_name: None | str = decompressed["t"]
             data: dict[str, Any] = decompressed.get("d", {})
-            if event:
-                log.info(f"Received {event} dispatch.")
+            if event_name:
+                log.info(f"Received {event_name} dispatch.")
             else:
                 log.info(f"Received opcode {opcode} ({Opcode(opcode).name}).")
             log.debug(json.dumps(decompressed, indent=4))
@@ -172,8 +173,9 @@ class GatewayConnection:
                 pass
 
             elif opcode == Opcode.DISPATCH:
-                if event == "READY":
-                    self.client.session_id = data["session_id"]
+                assert isinstance(event_name, str)
+                event = Event(self.client, event_name, data)
+                event.process()
 
     async def sender(self, send_queue: trio.MemoryReceiveChannel):
         # handles sending all messages to the gateway
