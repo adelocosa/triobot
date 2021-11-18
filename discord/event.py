@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import json
 import logging
-
 from typing import TYPE_CHECKING, Any
 
 from .guild import Guild
+from .user import User
 
 if TYPE_CHECKING:
     from .client import Client
@@ -31,6 +32,8 @@ class Event:
 
     def handle_ready(self):
         self.client.session_id = self.data["session_id"]
+        self.client.user = User(self.data["user"])
+        self.client.users[self.client.user.id] = self.client.user
 
     def handle_guild_create(self):
         guild = Guild(self.client, self.data)

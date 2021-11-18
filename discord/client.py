@@ -21,11 +21,12 @@ class Client:
 
     def __init__(self, TOKEN: str):
         self.TOKEN = TOKEN
+        self.user: None | User = None
         self.sequence: None | int = None
         self.session_id: None | str = None
         self.delay = self.START_DELAY
-        self.guilds: dict[int, Guild] = {}
-        self.users: dict[int, User] = {}
+        self.guilds: dict[str, Guild] = {}
+        self.users: dict[str, User] = {}
 
     def connect(self):
         while True:
@@ -46,6 +47,7 @@ class Client:
         self.delay = self.START_DELAY
 
     def clear_state(self):
+        self.user = None
         self.sequence = None
         self.session_id = None
         self.guilds = {}
