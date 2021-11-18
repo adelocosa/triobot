@@ -6,5 +6,4 @@ from .gateway import *
 from .guild import *
 from .http_request import *
 from .member import *
-from .message import *
 from .user import *
