@@ -1,7 +1,6 @@
 import logging
-from typing import Any
-
 from enum import IntEnum
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ class User:
             url = activity.get("url", None)
             activities.append(Activity(type, name, url))
         log.debug(
-            f"User {self.id} ({self.username}) activities set to {[str(activity) for activity in activities]}]"
+            f"User {self.id} ({self.username}) activities set to {[str(activity) for activity in activities]}"
         )
         self.activites = activities
         return
