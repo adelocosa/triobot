@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 
 class Event:
+    # todo: possibly make queue of events to process if they arrive prior to GUILD_CREATE
     def __init__(self, client: Client, name: str, data: dict[str, Any]):
         self.client = client
         self.name = name
@@ -86,13 +87,18 @@ class Event:
         )
 
     def handle_guild_member_update(self):
-        guild = self.client.guilds[self.data["guild_id"]]
-        member = guild.members[self.data["user"]["id"]]
-        member.update(self.data)
+        # sometimes comes before GUILD_CREATE on connect
+        try:
+            guild = self.client.guilds[self.data["guild_id"]]
+        except KeyError:
+            log.debug(f"Ignored {self.name} dispatch.")
+        else:
+            member = guild.members[self.data["user"]["id"]]
+            member.update(self.data)
 
     def handle_presence_update(self):
         user = self.client.users[self.data["user"]["id"]]
-        user.update_activities(self.data["activites"])
+        user.update_activities(self.data["activities"])
 
     def handle_user_update(self):
         user = self.client.users[self.data["user"]["id"]]
