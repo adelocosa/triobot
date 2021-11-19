@@ -31,7 +31,7 @@ log.info("Token found. Initializing bot...")
 bot = discord.Client(TOKEN)
 
 
-@bot.watch_interaction
+@bot.slash_command
 async def echo(interaction: discord.SlashCommand):
     message = interaction.data["options"][0]["value"]
     await bot.interaction_response(interaction, message)

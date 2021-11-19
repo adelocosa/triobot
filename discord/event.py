@@ -19,10 +19,6 @@ log = logging.getLogger(__name__)
 class Event:
     # todo: possibly make queue of events to process if they arrive prior to GUILD_CREATE
 
-    event_listeners = {}
-    interaction_listeners = {}
-    message_listeners = {}
-
     def __init__(self, client: Client, name: str, data: dict[str, Any]):
         self.client = client
         self.name = name
@@ -116,8 +112,8 @@ class Event:
 
     async def handle_interaction_create(self):
         guild = self.client.guilds[self.data["guild_id"]]
-        interaction: SlashCommand = SlashCommand(guild, self.data)
+        interaction = SlashCommand(guild, self.data)
         try:
-            await self.interaction_listeners[interaction.name](interaction)
+            await self.client.interaction_listeners[interaction.name](interaction)
         except KeyError:
             log.debug(f"Received unknown slash command '{interaction.name}'")
