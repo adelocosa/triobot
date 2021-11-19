@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import random
 import time
@@ -5,10 +7,13 @@ from typing import TYPE_CHECKING
 
 import trio
 
+from .event import Event
 from .gateway import GatewayConnection
+from .http_request import HTTPRequest
 
 if TYPE_CHECKING:
     from .guild import Guild
+    from .interaction import SlashCommand
     from .user import User
 
 log = logging.getLogger(__name__)
@@ -52,3 +57,12 @@ class Client:
         self.session_id = None
         self.guilds = {}
         self.users = {}
+
+    def watch_interaction(self, func):
+        Event.interaction_listeners[func.__name__] = func
+        return func
+
+    async def interaction_response(self, interaction: SlashCommand, message: str):
+        payload = {"type": 4, "data": {"content": message}}
+        r = HTTPRequest()
+        await r.interaction_response(interaction.id, interaction.token, payload)

@@ -25,12 +25,19 @@ log.setLevel(logging.DEBUG)
 log.addHandler(console_log)
 log.addHandler(file_log)
 
+TOKEN = os.environ.get("BOT_TOKEN")
+assert isinstance(TOKEN, str)
+log.info("Token found. Initializing bot...")
+bot = discord.Client(TOKEN)
+
+
+@bot.watch_interaction
+async def echo(interaction: discord.SlashCommand):
+    message = interaction.data["options"][0]["value"]
+    await bot.interaction_response(interaction, message)
+
 
 def main():
-    TOKEN = os.environ.get("BOT_TOKEN")
-    assert isinstance(TOKEN, str)
-    log.info("Token found. Initializing bot...")
-    bot = discord.Client(TOKEN)
     bot.connect()
 
 

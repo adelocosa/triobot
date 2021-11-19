@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 
 class HTTPRequest:
     TOKEN = os.environ.get("BOT_TOKEN")
+    APP_ID = os.environ.get("APP_ID")
     API_URL: ClassVar[str] = "https://discordapp.com/api/v9"
 
     def __init__(self):
@@ -43,8 +44,25 @@ class HTTPRequest:
                 method, url, **payload_format[method]
             )
             log.info(f"Request returned status {self.response.status_code}.")
-            log.debug(json.dumps(self.response.json(), indent=4))
+            if self.response.status_code != 204:
+                log.debug(json.dumps(self.response.json(), indent=4))
         return self.response
+
+    # application commands
+
+    async def create_guild_application_command(
+        self, guild_id: str, payload: Payload = None
+    ) -> httpx.Response:
+        route = f"/applications/{self.APP_ID}/guilds/{guild_id}/commands"
+        method = "POST"
+        return await self.send(method, route, payload)
+
+    async def interaction_response(
+        self, interaction_id: str, interaction_token: str, payload: Payload = None
+    ) -> httpx.Response:
+        route = f"/interactions/{interaction_id}/{interaction_token}/callback"
+        method = "POST"
+        return await self.send(method, route, payload)
 
     # channel requests
 

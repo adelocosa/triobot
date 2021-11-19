@@ -1,0 +1,13 @@
+{
+    "name": "echo",
+    "type": 1,
+    "description": "Echoes the given message",
+    "options": [
+        {
+            "name": "message",
+            "description": "The message to echo",
+            "type": 3,
+            "required": true
+        }
+    ]
+}

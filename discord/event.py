@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from .channel import Channel
 from .guild import Guild
+from .interaction import SlashCommand
 from .member import GuildMember
 from .user import User
 
@@ -17,6 +18,11 @@ log = logging.getLogger(__name__)
 
 class Event:
     # todo: possibly make queue of events to process if they arrive prior to GUILD_CREATE
+
+    event_listeners = {}
+    interaction_listeners = {}
+    message_listeners = {}
+
     def __init__(self, client: Client, name: str, data: dict[str, Any]):
         self.client = client
         self.name = name
@@ -24,11 +30,11 @@ class Event:
         log.info(f"Received {self.name} dispatch.")
         log.debug(json.dumps(data, indent=4))
 
-    def process(self):
+    async def process(self):
         handler = f"handle_{self.name.lower()}"
         try:
-            getattr(self, handler)()
-        except AttributeError:
+            await getattr(self, handler)()
+        except (AttributeError, TypeError):
             log.debug(f"Ignored {self.name} dispatch.")
         else:
             log.debug(f"Finished processing {self.name} dispatch.")
@@ -107,3 +113,11 @@ class Event:
     def handle_voice_state_update(self):
         # todo: track streaming status (can be wacky)
         pass
+
+    async def handle_interaction_create(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        interaction: SlashCommand = SlashCommand(guild, self.data)
+        try:
+            await self.interaction_listeners[interaction.name](interaction)
+        except KeyError:
+            log.debug(f"Received unknown slash command '{interaction.name}'")

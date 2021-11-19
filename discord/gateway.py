@@ -173,7 +173,7 @@ class GatewayConnection:
             elif opcode == Opcode.DISPATCH:
                 assert isinstance(event_name, str)
                 event = Event(self.client, event_name, data)
-                event.process()
+                await event.process()
 
     async def sender(self, send_queue: trio.MemoryReceiveChannel):
         # handles sending all messages to the gateway
