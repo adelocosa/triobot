@@ -3,11 +3,10 @@ from __future__ import annotations
 import logging
 import random
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import trio
 
-from .event import Event
 from .gateway import GatewayConnection
 from .http_request import HTTPRequest
 
@@ -32,6 +31,8 @@ class Client:
         self.delay = self.START_DELAY
         self.guilds: dict[str, Guild] = {}
         self.users: dict[str, User] = {}
+        self.event_listeners: dict[str, Callable] = {}
+        self.interaction_listeners: dict[str, Callable] = {}
 
     def connect(self):
         while True:
@@ -58,8 +59,8 @@ class Client:
         self.guilds = {}
         self.users = {}
 
-    def watch_interaction(self, func):
-        Event.interaction_listeners[func.__name__] = func
+    def slash_command(self, func: Callable):
+        self.interaction_listeners[func.__name__] = func
         return func
 
     async def interaction_response(self, interaction: SlashCommand, message: str):

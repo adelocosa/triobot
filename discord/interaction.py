@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from .channel import Channel
     from .guild import Guild
-
+    from .member import GuildMember
 
 class InteractionType(IntEnum):
 
@@ -17,10 +17,10 @@ class InteractionType(IntEnum):
 
 class SlashCommand:
     def __init__(self, guild: Guild, data: dict[str, Any]):
-        self.id = data["id"]
-        self.token = data["token"]
         self.guild = guild
-        self.channel = self.guild.channels[data["channel_id"]]
-        self.member = self.guild.members[data["member"]["user"]["id"]]
-        self.data = data["data"]
-        self.name = self.data["name"]
+        self.id: str = data["id"]
+        self.token: str = data["token"]
+        self.channel: Channel = self.guild.channels[data["channel_id"]]
+        self.member: GuildMember = self.guild.members[data["member"]["user"]["id"]]
+        self.data: dict[str, Any] = data["data"]
+        self.name: str = self.data["name"]
