@@ -37,6 +37,16 @@ async def echo(interaction: discord.SlashCommand):
     await bot.interaction_response(interaction, message)
 
 
+@bot.slash_command
+async def slap(interaction: discord.SlashCommand):
+    slapper = str(interaction.member)
+    target = str(
+        interaction.guild.members[list(interaction.data["resolved"]["users"])[0]]
+    )
+    message = f"*{slapper} slaps {target} around a bit with a large trout*"
+    await bot.interaction_response(interaction, message)
+
+
 def main():
     bot.connect()
 
