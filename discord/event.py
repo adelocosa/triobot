@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from inspect import iscoroutinefunction
 from typing import TYPE_CHECKING, Any
 
 from .channel import Channel
@@ -27,12 +28,15 @@ class Event:
         log.debug(json.dumps(data, indent=4))
 
     async def process(self):
-        handler = f"handle_{self.name.lower()}"
         try:
-            await getattr(self, handler)()
-        except (AttributeError, TypeError):
+            handler = getattr(self, f"handle_{self.name.lower()}")
+        except AttributeError:
             log.debug(f"Ignored {self.name} dispatch.")
         else:
+            if iscoroutinefunction(handler):
+                await handler()
+            else:
+                handler()
             log.debug(f"Finished processing {self.name} dispatch.")
 
     def handle_ready(self):
