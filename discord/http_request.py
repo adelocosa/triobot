@@ -57,6 +57,13 @@ class HTTPRequest:
         method = "POST"
         return await self.send(method, route, payload)
 
+    async def delete_guild_application_command(
+        self, guild_id: str, command_id: str
+    ) -> httpx.Response:
+        route = f"/applications/{self.APP_ID}/guilds/{guild_id}/commands/{command_id}"
+        method = "DELETE"
+        return await self.send(method, route)
+
     async def interaction_response(
         self, interaction_id: str, interaction_token: str, payload: Payload = None
     ) -> httpx.Response:
