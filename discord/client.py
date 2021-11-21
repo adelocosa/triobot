@@ -80,6 +80,7 @@ class Client:
         async with trio.open_nursery() as nursery:
             for task in self.tasks:
                 nursery.start_soon(task)
+                log.info(f'Started task {task.__name__}.')
 
     async def interaction_response(self, interaction: SlashCommand, message: str):
         payload = {"type": 4, "data": {"content": message}}
