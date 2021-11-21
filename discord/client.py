@@ -33,6 +33,7 @@ class Client:
         self.users: dict[str, User] = {}
         self.event_listeners: dict[str, Callable] = {}
         self.interaction_listeners: dict[str, Callable] = {}
+        self.tasks: list[Callable] = []
 
     def connect(self):
         while True:
@@ -60,10 +61,32 @@ class Client:
         self.users = {}
 
     def slash_command(self, func: Callable):
+        # decorator for responding to slash commands
+        # function name must correspond to command name
         self.interaction_listeners[func.__name__] = func
         return func
+
+    def task(self, func: Callable):
+        # decorator to create looping background tasks
+        # tasks will restart on disconnect/reconnect
+        self.tasks.append(func)
+        return func
+
+    async def on_connected(self):
+        log.info("Connected!")
+        self.reset_delay()
+
+    async def background_tasks(self):
+        async with trio.open_nursery() as nursery:
+            for task in self.tasks:
+                nursery.start_soon(task)
 
     async def interaction_response(self, interaction: SlashCommand, message: str):
         payload = {"type": 4, "data": {"content": message}}
         r = HTTPRequest()
         await r.interaction_response(interaction.id, interaction.token, payload)
+
+    async def send_message(self, channel: str, message: str):
+        payload = {"content": message}
+        r = HTTPRequest()
+        await r.create_message(channel, payload)
