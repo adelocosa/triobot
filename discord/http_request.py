@@ -44,6 +44,7 @@ class HTTPRequest:
                 method, url, **payload_format[method]
             )
             log.info(f"Request returned status {self.response.status_code}.")
+            log.debug(json.dumps(dict(self.response.headers), indent=4))
             if self.response.status_code != 204:
                 log.debug(json.dumps(self.response.json(), indent=4))
         return self.response
