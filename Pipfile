@@ -8,6 +8,7 @@ trio = "*"
 trio-websocket = "*"
 python-dotenv = "*"
 httpx = "*"
+streamlink = "*"
 
 [dev-packages]
 
