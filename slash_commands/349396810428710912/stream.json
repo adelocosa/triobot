@@ -1,0 +1,38 @@
+{
+    "name": "stream",
+    "type": 1,
+    "description": "List or edit linked streams",
+    "options": [
+        {
+            "type": 1,
+            "name": "link",
+            "description": "Link a new stream",
+            "options": [
+                {
+                    "name": "url",
+                    "description": "stream url",
+                    "type": 3,
+                    "required": true
+                }
+            ]
+        },
+        {
+            "type": 1,
+            "name": "unlink",
+            "description": "Remove a linked stream",
+            "options": [
+                {
+                    "name": "url",
+                    "description": "stream url",
+                    "type": 3,
+                    "required": true
+                }
+            ]
+        },
+        {
+            "type": 1,
+            "name": "list",
+            "description": "List linked streams"
+        }
+    ]
+}
