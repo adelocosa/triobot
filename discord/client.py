@@ -19,7 +19,6 @@ log = logging.getLogger(__name__)
 
 
 class Client:
-
     START_DELAY = 1.1
     MAX_DELAY = 32
 
@@ -80,10 +79,13 @@ class Client:
         async with trio.open_nursery() as nursery:
             for task in self.tasks:
                 nursery.start_soon(task)
-                log.info(f'Started task {task.__name__}.')
+                log.info(f"Started task {task.__name__}.")
 
-    async def interaction_response(self, interaction: SlashCommand, message: str):
-        payload = {"type": 4, "data": {"content": message}}
+    async def interaction_response(
+        self, interaction: SlashCommand, message: str, ephemeral: bool = False
+    ):
+        flags = 64 if ephemeral else 0
+        payload = {"type": 4, "data": {"content": message, "flags": flags}}
         r = HTTPRequest()
         await r.interaction_response(interaction.id, interaction.token, payload)
 
