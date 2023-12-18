@@ -25,10 +25,10 @@ log.setLevel(logging.DEBUG)
 log.addHandler(console_log)
 log.addHandler(file_log)
 
-TOKEN = os.environ.get("BOT_TOKEN")
-assert isinstance(TOKEN, str)
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+assert isinstance(BOT_TOKEN, str)
 log.info("Token found. Initializing bot...")
-bot = discord.Client(TOKEN)
+bot = discord.Client(BOT_TOKEN)
 
 
 # to implement for feature parity: (* critical)
@@ -77,9 +77,9 @@ async def stream(interaction: discord.SlashCommand):
         return
 
     url = interaction.data["options"][0]["options"][0]["value"]
-    new_stream = utils.Stream(url)
 
     if subcommand == "link":
+        new_stream = utils.Stream(True, url)
         utils.insert_user(con, userid)
         if not new_stream.valid:
             message = "couldn't validate stream"
@@ -94,12 +94,15 @@ async def stream(interaction: discord.SlashCommand):
         return
 
     if subcommand == "unlink":
-        if new_stream not in user_streams:
-            message = "stream not found"
-            await bot.interaction_response(interaction, message, ephemeral)
-            return
-        utils.delete_stream(con, new_stream)
-        await bot.interaction_response(interaction, f"unlinked {new_stream}", ephemeral)
+        new_stream = utils.Stream(False, url)
+        for linked_stream in user_streams:
+            if linked_stream == new_stream:
+                utils.delete_stream(con, linked_stream)
+                message = f"unlinked {new_stream}"
+                await bot.interaction_response(interaction, message, ephemeral)
+                return
+        message = "stream not found"
+        await bot.interaction_response(interaction, message, ephemeral)
         return
 
 
@@ -110,17 +113,11 @@ async def test_task():
         await trio.sleep(3600)
 
 
-# @bot.task
-# async def test_task2():
-#     while True:
-#         await bot.send_message("723649270296739882", "hi!")
-#         await trio.sleep(5)
-
-
 def initialize_database() -> sqlite3.Connection:
     sqlite3.register_adapter(utils.Stream, utils.adapt_stream)
     sqlite3.register_converter("STREAM", utils.convert_stream)
     con = sqlite3.connect("mumbot.db", detect_types=sqlite3.PARSE_DECLTYPES)
+    log.info("Connected to sqlite database.")
     utils.create_users_table(con)
     utils.create_userstreams_table(con)
     return con
@@ -128,6 +125,9 @@ def initialize_database() -> sqlite3.Connection:
 
 try:
     con = initialize_database()
+    TWITCH_TOKEN = utils.get_twitch_bearer_token()
+    assert isinstance(TWITCH_TOKEN, str)
+    os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
     bot.connect()
 except KeyboardInterrupt:
     log.info("Program halted due to keyboard interrupt.")

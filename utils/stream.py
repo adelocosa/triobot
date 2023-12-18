@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 class Stream:
     def __init__(
-        self, url: str = "", service: str = "", username: str = "", userid: str = ""
+        self, validate: bool, url: str = "", service: str = "", username: str = "", userid: str = ""
     ):
         self.url = url
         self.service = service
@@ -20,9 +20,9 @@ class Stream:
         self.userid = userid
         if not (self.service and self.username):
             self.url, self.service, self.username = self.parse_url(self.url)
-        if not self.userid:
+        if validate:
             self.valid: bool = self.validate()
-            log.info(f"{self.url} validated: {self.valid}")
+            log.debug(f"{self.url} validated: {self.valid}")
 
     def __repr__(self):
         return (
@@ -43,18 +43,15 @@ class Stream:
         service = parsed.netloc
         username = parsed.path.strip("/")
         url = f"https://{service}/{username}"
-        log.info(f"Parsed stream url (service = {service}, username = {username}).")
+        log.debug(f"Parsed stream url (service = {service}, username = {username}).")
         return (url, service, username)
 
     def validate(self) -> bool:
-        if self.service == "twitch.tv":
-            oauth_token = get_twitch_bearer_token()
-            if not oauth_token:
-                return False
-            self.userid = get_userid_from_username(oauth_token, self.username)
-            return False if not self.userid else True
-        else:
+        if not self.service == "twitch.tv":
             return False
+        self.userid = get_userid_from_username(self.username)
+        return False if not self.userid else True
+
 
 
 def adapt_stream(stream: Stream):
@@ -63,4 +60,4 @@ def adapt_stream(stream: Stream):
 
 def convert_stream(query: bytes) -> Stream:
     url, service, username, userid = [s.decode("utf-8") for s in query.split(b";")]
-    return Stream(url, service, username, userid)
+    return Stream(False, url, service, username, userid)

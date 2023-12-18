@@ -15,6 +15,7 @@ def get_twitch_bearer_token() -> Optional[str]:
     try:
         log.info("Sending twitch oauth token request.")
         response = httpx.post(get_token_url)
+        log.debug(json.dumps(response.json(), indent=4))
         oauth_token = response.json()["access_token"]
         log.info(f"Got oauth token: {oauth_token}")
     except:
@@ -23,10 +24,11 @@ def get_twitch_bearer_token() -> Optional[str]:
     return oauth_token
 
 
-def get_userid_from_username(oauth_token: str, username: str) -> str:
+def get_userid_from_username(username: str) -> str:
     CLIENT_ID = os.environ.get("CLIENT_ID")
+    TWITCH_TOKEN = os.environ.get("TWITCH_TOKEN")
     headers = {
-        "Authorization": f"Bearer {oauth_token}",
+        "Authorization": f"Bearer {TWITCH_TOKEN}",
         "Client-Id": f"{CLIENT_ID}",
     }
     url = f"https://api.twitch.tv/helix/users?login={username}"
@@ -38,5 +40,5 @@ def get_userid_from_username(oauth_token: str, username: str) -> str:
         log.info(f"Got userid {userid}")
     except:
         userid = ""
-        log.info("Couldn't get twitch user. Invalid username?")
+        log.info(f"Couldn't get userid for {username}.")
     return userid
