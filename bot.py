@@ -118,24 +118,11 @@ async def test_task():
 
 
 def initialize_database() -> sqlite3.Connection:
-    create_users_table_query = """
-    CREATE TABLE IF NOT EXISTS Users (
-        UserID TEXT PRIMARY KEY
-    )
-    """
-    create_userstreams_table_query = """
-    CREATE TABLE IF NOT EXISTS UserStreams (
-    StreamID INTEGER PRIMARY KEY,
-    UserID TEXT,
-    Stream STREAM,
-    FOREIGN KEY(UserID) REFERENCES Users(UserID)
-    )
-    """
     sqlite3.register_adapter(utils.Stream, utils.adapt_stream)
     sqlite3.register_converter("STREAM", utils.convert_stream)
     con = sqlite3.connect("mumbot.db", detect_types=sqlite3.PARSE_DECLTYPES)
-    con.execute(create_users_table_query)
-    con.execute(create_userstreams_table_query)
+    utils.create_users_table(con)
+    utils.create_userstreams_table(con)
     return con
 
 

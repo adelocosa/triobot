@@ -9,6 +9,31 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+def create_users_table(con: sqlite3.Connection):
+    con.execute(
+        """
+    CREATE TABLE IF NOT EXISTS Users (
+        UserID TEXT PRIMARY KEY
+    )
+    """
+    )
+    con.commit()
+
+
+def create_userstreams_table(con: sqlite3.Connection):
+    con.execute(
+        """
+    CREATE TABLE IF NOT EXISTS UserStreams (
+    StreamID INTEGER PRIMARY KEY,
+    UserID TEXT,
+    Stream STREAM,
+    FOREIGN KEY(UserID) REFERENCES Users(UserID)
+    )
+    """
+    )
+    con.commit()
+
+
 def get_streams_by_userid(con: sqlite3.Connection, userid: str) -> list[Stream]:
     streams: list[Stream] = [
         s[1]
