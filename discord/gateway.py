@@ -51,7 +51,7 @@ class GatewayConnection:
     async def connect(self) -> None:
         try:
             async with open_websocket_url(
-                "wss://gateway.discord.gg/?v=9&encoding=json&compress=zlib-stream",
+                "wss://gateway.discord.gg/?v=10&encoding=json&compress=zlib-stream",
                 connect_timeout=5,
                 disconnect_timeout=5,
             ) as ws:
@@ -102,7 +102,7 @@ class GatewayConnection:
                 "op": 2,
                 "d": {
                     "token": self.client.TOKEN,
-                    "intents": 32767,
+                    "intents": 131071,
                     "properties": {
                         "$os": "windows",
                         "$browser": "mumbotv2",

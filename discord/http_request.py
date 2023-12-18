@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 class HTTPRequest:
     TOKEN = os.environ.get("BOT_TOKEN")
     APP_ID = os.environ.get("APP_ID")
-    API_URL: ClassVar[str] = "https://discordapp.com/api/v9"
+    API_URL: ClassVar[str] = "https://discord.com/api/v10"
 
     def __init__(self):
         self.response: None | httpx.Response = None
@@ -63,6 +63,11 @@ class HTTPRequest:
     ) -> httpx.Response:
         route = f"/applications/{self.APP_ID}/guilds/{guild_id}/commands/{command_id}"
         method = "DELETE"
+        return await self.send(method, route)
+
+    async def get_guild_application_commands(self, guild_id: str) -> httpx.Response:
+        route = f"/applications/{self.APP_ID}/guilds/{guild_id}/commands"
+        method = "GET"
         return await self.send(method, route)
 
     async def interaction_response(
