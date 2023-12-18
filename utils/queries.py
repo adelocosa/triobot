@@ -18,6 +18,7 @@ def create_users_table(con: sqlite3.Connection):
     """
     )
     con.commit()
+    log.debug("Created Users table.")
 
 
 def create_userstreams_table(con: sqlite3.Connection):
@@ -32,6 +33,7 @@ def create_userstreams_table(con: sqlite3.Connection):
     """
     )
     con.commit()
+    log.debug("Created UserStreams table.")
 
 
 def get_streams_by_userid(con: sqlite3.Connection, userid: str) -> list[Stream]:
@@ -49,6 +51,7 @@ def get_streams_by_userid(con: sqlite3.Connection, userid: str) -> list[Stream]:
             )
         )
     ]
+    log.debug("Executed get_streams query.")
     return streams
 
 
@@ -58,6 +61,7 @@ def insert_user(con: sqlite3.Connection, userid: str):
         (userid,),
     )
     con.commit()
+    log.debug("Executed insert user query.")
 
 
 def insert_stream(con: sqlite3.Connection, userid: str, stream: Stream):
@@ -69,8 +73,10 @@ def insert_stream(con: sqlite3.Connection, userid: str, stream: Stream):
         ),
     )
     con.commit()
+    log.debug("Executed insert stream query.")
 
 
 def delete_stream(con: sqlite3.Connection, stream: Stream):
     con.execute("DELETE FROM UserStreams WHERE Stream = ?", (stream,))
     con.commit()
+    log.debug("Executed delete stream query.")
