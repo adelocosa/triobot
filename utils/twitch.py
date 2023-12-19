@@ -3,7 +3,6 @@ import httpx
 import os
 import logging
 import json
-import time
 from typing import Optional
 
 log = logging.getLogger(__name__)
