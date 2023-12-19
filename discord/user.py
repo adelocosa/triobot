@@ -35,7 +35,7 @@ class User:
     def update(self, data: dict[str, Any]):
         self.username: str = data["username"]
         self.number: str = data["discriminator"]
-                
+
     def update_activities(self, data: list[dict[str, Any]]) -> None:
         activities = []
         for activity in data:
@@ -46,5 +46,5 @@ class User:
         log.debug(
             f"User {self.id} ({self.username}) activities set to {[str(activity) for activity in activities]}"
         )
-        self.activites = activities
+        self.activities = activities
         return
