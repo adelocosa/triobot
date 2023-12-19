@@ -29,6 +29,9 @@ class Channel:
             f"Added channel {self.id} ({self.name}) to guild {self.guild.id} ({self.guild.name})."
         )
 
+    def __str__(self):
+        return self.name
+
     def update(self, data: dict[str, Any]):
         self.position = data.get("position", self.position)
         self.name = data.get("name", self.name)
