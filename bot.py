@@ -62,11 +62,26 @@ async def slap(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
+async def live(interaction: discord.SlashCommand):
+    message = "Currently live:"
+    zero = True
+    for member in interaction.guild.members.values():
+        if member.is_live:
+            zero = False
+            message += f"\n`🔊 {member.nick}`"
+    if zero:
+        message = "No streams live."
+    await bot.interaction_response(interaction, message)
+    return
+
+
+@bot.slash_command
 async def stream(interaction: discord.SlashCommand):
     ephemeral = True
     userid = interaction.member.user.id
     subcommand = interaction.data["options"][0]["name"]
     user_streams = utils.get_streams_by_userid(con, userid)
+
     if subcommand == "list":
         x = 1
         message = "linked streams:"

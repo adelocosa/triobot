@@ -1,0 +1,5 @@
+{
+    "name": "live",
+    "type": 1,
+    "description": "Lists streams currently live"
+}
