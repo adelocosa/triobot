@@ -1,7 +1,7 @@
 {
     "name": "setchannel",
     "type": 1,
-    "description": "Sets the announce channel",
+    "description": "[ADMIN] Sets the announce channel",
     "options": [
         {
             "name": "id",
