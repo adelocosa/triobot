@@ -65,6 +65,7 @@ class Guild:
                 live = True
             else:
                 live = False
+            self.members[state["user_id"]].was_live = self.members[state["user_id"]].is_live
             self.members[state["user_id"]].is_live = live
 
     def update_activities(self, presence_list: list[dict]) -> None:

@@ -16,6 +16,7 @@ class GuildMember:
         self.guild = guild
         self.nick: None | str = data.get("nick", None)
         self.is_live: bool = False
+        self.was_live: bool = False
         if data["user"]["id"] not in self.guild.client.users:
             user = User(data["user"])
             self.guild.client.users[user.id] = user

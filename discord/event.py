@@ -37,6 +37,9 @@ class Event:
                 await handler()
             else:
                 handler()
+            if self.name.lower() in self.client.event_listeners.keys():
+                await self.client.event_listeners[self.name.lower()](self.data)
+                log.debug(f"Triggered {self.name} event.")
             log.debug(f"Finished processing {self.name} dispatch.")
 
     def handle_ready(self):

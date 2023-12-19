@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import time
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 
 import trio
 
@@ -59,6 +59,12 @@ class Client:
         self.guilds = {}
         self.users = {}
 
+    def event(self, func: Callable):
+        # decorator for responding to events
+        # function name must correspond to event name
+        self.event_listeners[func.__name__] = func
+        return func
+
     def slash_command(self, func: Callable):
         # decorator for responding to slash commands
         # function name must correspond to command name
@@ -89,7 +95,10 @@ class Client:
         r = HTTPRequest()
         await r.interaction_response(interaction.id, interaction.token, payload)
 
-    async def send_message(self, channel: str, message: str):
+    async def send_message(self, channel: Optional[str], message: str):
+        if not channel:
+            log.debug("Tried to send a message, but had no channel.")
+            return
         payload = {"content": message}
         r = HTTPRequest()
         await r.create_message(channel, payload)
