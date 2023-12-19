@@ -22,6 +22,8 @@ class Guild:
         self.emojis: dict[str, Emoji] = self.parse_emojis(data["emojis"])
         self.members: dict[str, GuildMember] = self.parse_members(data["members"])
         self.channels: dict[str, Channel] = self.parse_channels(data["channels"])
+        if data.get("voice_states", None):
+            self.parse_voice_states(data["voice_states"])
         if data.get("presences", None):
             self.update_activities(data["presences"])
 
@@ -51,6 +53,19 @@ class Guild:
             channel = Channel(self, channel_data)
             channels[channel.id] = channel
         return channels
+
+    def parse_voice_states(self, voice_state_list: list[dict[str, Any]]):
+        for state in voice_state_list:
+            live = False
+            if "self_stream" in state.keys():
+                live = state["self_stream"]
+            elif "self_video" in state.keys() and not live:
+                live = state["self_video"]
+            if live and state["channel_id"]:
+                live = True
+            else:
+                live = False
+            self.members[state["user_id"]].is_live = live
 
     def update_activities(self, presence_list: list[dict]) -> None:
         for presence_data in presence_list:

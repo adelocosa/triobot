@@ -12,8 +12,14 @@ log = logging.getLogger(__name__)
 
 class Stream:
     def __init__(
-        self, validate: bool, url: str = "", service: str = "", username: str = "", userid: str = ""
+        self,
+        validate: bool,
+        url: str = "",
+        service: str = "",
+        username: str = "",
+        userid: str = "",
     ):
+        self.live: bool = False
         self.url = url
         self.service = service
         self.username = username
@@ -51,7 +57,6 @@ class Stream:
             return False
         self.userid = get_userid_from_username(self.username)
         return False if not self.userid else True
-
 
 
 def adapt_stream(stream: Stream):

@@ -111,8 +111,8 @@ class Event:
         user.update(self.data)
 
     def handle_voice_state_update(self):
-        # todo: track streaming status (can be wacky)
-        pass
+        guild = self.client.guilds[self.data["guild_id"]]
+        guild.parse_voice_states([self.data])
 
     async def handle_interaction_create(self):
         guild = self.client.guilds[self.data["guild_id"]]
