@@ -50,30 +50,38 @@ def create_guilds_table(con: sqlite3.Connection):
 
 
 def get_streams_by_userid(con: sqlite3.Connection, user_id: str) -> list[Stream]:
-    streams: list[Stream] = [
-        s[1]
-        for s in list(
-            con.execute(
-                """
-        SELECT UserStreams.StreamID, UserStreams.Stream
-        FROM UserStreams
-        JOIN Users ON UserStreams.UserID = Users.UserID
-        WHERE Users.UserID = ?
-        """,
-                (user_id,),
-            )
-        )
-    ]
-    log.debug("Executed get_streams query.")
+    query = "SELECT Stream FROM UserStreams WHERE UserID = ?"
+    streams: list[Stream] = [s[0] for s in list(con.execute(query, (user_id,)))]
+    log.debug("Executed get streams by userid query.")
     return streams
 
 
+def get_streams_by_userids(
+    con: sqlite3.Connection, user_ids: list[str]
+) -> list[Stream]:
+    query = "SELECT Stream FROM UserStreams WHERE UserID IN ({})".format(
+        ",".join("?" for _ in user_ids)
+    )
+    result: list[Stream] = [s[0] for s in con.execute(query, user_ids)]
+    log.debug("Executed get streams by userids query.")
+    return result
+
+
+def get_all_streams(con: sqlite3.Connection) -> list[tuple[str, Stream]]:
+    query = "SELECT UserID, Stream FROM UserStreams"
+    result: list[tuple[str, Stream]] = list(con.execute(query))
+    log.debug("Executed get all streams query.")
+    return result
+
+
 def get_announce_channel(con: sqlite3.Connection, guild_id: str) -> Optional[str]:
-    print(guild_id)
     channel_id = con.execute(
         "SELECT AnnounceChannel FROM Guilds WHERE GuildID = ?", (guild_id,)
-    ).fetchone()[0]
-    return channel_id
+    ).fetchone()
+    log.debug("Executed get announce channel query.")
+    if channel_id:
+        return channel_id[0]
+    return None
 
 
 def insert_user(con: sqlite3.Connection, user_id: str):

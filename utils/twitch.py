@@ -3,6 +3,7 @@ import httpx
 import os
 import logging
 import json
+import time
 from typing import Optional
 
 log = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ def get_twitch_bearer_token() -> Optional[str]:
     return oauth_token
 
 
-def get_userid_from_username(username: str) -> str:
+async def get_userid_from_username(username: str) -> str:
     CLIENT_ID = os.environ.get("CLIENT_ID")
     TWITCH_TOKEN = os.environ.get("TWITCH_TOKEN")
     headers = {
@@ -42,3 +43,28 @@ def get_userid_from_username(username: str) -> str:
         userid = ""
         log.info(f"Couldn't get userid for {username}.")
     return userid
+
+
+async def get_live_streams_by_usernames(usernames: list[str]) -> list[Optional[str]]:
+    live = []
+    CLIENT_ID = os.environ.get("CLIENT_ID")
+    TWITCH_TOKEN = os.environ.get("TWITCH_TOKEN")
+    headers = {
+        "Authorization": f"Bearer {TWITCH_TOKEN}",
+        "Client-Id": f"{CLIENT_ID}",
+    }
+    url = f"https://api.twitch.tv/helix/streams?"
+    for username in usernames:
+        url += f"user_login={username}&"
+    url += "type=live&first=100"
+    try:
+        log.info("Sending twitch Get Streams request.")
+        response = httpx.get(url, headers=headers)
+        log.debug(json.dumps(response.json(), indent=4))
+        log.debug(json.dumps(dict(response.headers), indent=4))
+    except:
+        log.info(f"Couldn't get streams.")
+        return live
+    for stream in response.json()["data"]:
+        live.append(stream["user_login"])
+    return live
