@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import time
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, Any
 
 import trio
 
@@ -36,6 +36,7 @@ class Client:
 
     def connect(self):
         while True:
+            self.gateway_channel: None | trio.MemorySendChannel = None
             self.connection = GatewayConnection(self, self.TOKEN)
             log.info("Attempting to connect...")
             trio.run(self.connection.connect)
@@ -102,3 +103,8 @@ class Client:
         payload = {"content": message}
         r = HTTPRequest()
         await r.create_message(channel, payload)
+
+    async def send_gateway_message(self, message: dict[str, Any]):
+        if not self.gateway_channel:
+            return
+        await self.gateway_channel.send(message)

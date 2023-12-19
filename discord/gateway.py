@@ -74,6 +74,7 @@ class GatewayConnection:
                             self.heartbeat, receive_hb_info, send_gateway_message
                         )
                         nursery.start_soon(self.client.background_tasks)
+                        self.client.gateway_channel = send_gateway_message.clone()
 
                 except ConnectionClosed as cc:
                     reason = (

@@ -60,10 +60,10 @@ class Mumbot(discord.Client):
                 streams.extend(bot.user_streams[user])
         return streams
 
-    def get_user_from_stream(self, stream: utils.Stream) -> str:
+    def get_user_from_stream(self, stream: utils.Stream) -> discord.User:
         for user_id, streams in self.user_streams.items():
             if stream in streams:
-                return user_id
+                return bot.users[user_id]
         raise Exception("orphaned stream")
 
     def get_playing_game(self, user: discord.User) -> str:
@@ -123,11 +123,10 @@ async def live(interaction: discord.SlashCommand):
     for stream in streams:
         if stream.is_live:
             zero = False
-            user_id = bot.get_user_from_stream(stream)
-            member = interaction.guild.members[bot.get_user_from_stream(stream)]
-            game = bot.get_playing_game(member.user)
+            user = bot.get_user_from_stream(stream)
+            game = bot.get_playing_game(user)
             add = f" - playing **{game}**" if game else ""
-            message += f"\n**{interaction.guild.members[user_id]}** - {stream}{add}"
+            message += f"\n**{interaction.guild.members[user.id]}** - {stream}{add}"
     if zero:
         message = "No streams live."
     await bot.interaction_response(interaction, message)
@@ -195,7 +194,7 @@ async def twitch_polling():
                     continue
                 stream.is_live = True
                 if not stream.was_live:
-                    member = guild.members[bot.get_user_from_stream(stream)]
+                    member = guild.members[bot.get_user_from_stream(stream).id]
                     game = bot.get_playing_game(member.user)
                     add = f", playing **{game}**" if game else ""
                     message = f"**{member}** just went live{add}!\n{stream}"
