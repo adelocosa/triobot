@@ -66,6 +66,12 @@ class Mumbot(discord.Client):
                 return user_id
         raise Exception("orphaned stream")
 
+    def get_playing_game(self, user: discord.User) -> str:
+        for activity in user.activities:
+            if activity.type == discord.ActivityType.PLAYING:
+                return activity.name
+        return ""
+
 
 bot = Mumbot()
 
@@ -85,8 +91,10 @@ async def voice_state_update(data: dict[str, Any]):
     if member.is_live and not member.was_live:
         assert member.voice_state
         assert member.voice_state.channel
-        # todo: add game playing
-        message = f"**{member}** just went live!\n`🔊 {member.voice_state.channel.name}`"
+        game = bot.get_playing_game(member.user)
+        add = f", playing **{game}**" if game else ""
+        message = f"**{member}** just went live{add}! \
+                \n`🔊 {member.voice_state.channel.name}`"
         await bot.send_message(utils.get_announce_channel(bot.con, guild_id), message)
     return
 
@@ -108,15 +116,18 @@ async def live(interaction: discord.SlashCommand):
             zero = False
             assert member.voice_state
             assert member.voice_state.channel
-            # todo: add game playing
-            message += f"\n**{member}** - `🔊 {member.voice_state.channel.name}`"
+            game = bot.get_playing_game(member.user)
+            add = f" - playing **{game}**" if game else ""
+            message += f"\n**{member}** - `🔊 {member.voice_state.channel.name}`{add}"
     streams = bot.get_guild_streams(interaction.guild.id)
     for stream in streams:
         if stream.is_live:
             zero = False
-            # todo: add game playing
             user_id = bot.get_user_from_stream(stream)
-            message += f"\n**{interaction.guild.members[user_id]}** - {stream}"
+            member = interaction.guild.members[bot.get_user_from_stream(stream)]
+            game = bot.get_playing_game(member.user)
+            add = f" - playing **{game}**" if game else ""
+            message += f"\n**{interaction.guild.members[user_id]}** - {stream}{add}"
     if zero:
         message = "No streams live."
     await bot.interaction_response(interaction, message)
@@ -171,13 +182,6 @@ async def stream(interaction: discord.SlashCommand):
 
 
 @bot.task
-async def test_task():
-    while True:
-        await bot.send_message("723649270296739882", "hello!")
-        await trio.sleep(3600)
-
-
-@bot.task
 async def twitch_polling():
     while True:
         await trio.sleep(5)
@@ -186,17 +190,18 @@ async def twitch_polling():
             usernames = [stream.username for stream in streams]
             live = await utils.get_live_streams_by_usernames(usernames)
             for stream in streams:
-                if stream.username in live:
-                    stream.is_live = True
-                    if not stream.was_live:
-                        user_id = bot.get_user_from_stream(stream)
-                        # todo: add game playing
-                        message = f"**{guild.members[user_id]}** is now live!\n{stream}"
-                        await bot.send_message(
-                            utils.get_announce_channel(bot.con, guild.id), message
-                        )
-                else:
+                if stream.username not in live:
                     stream.is_live = False
+                    continue
+                stream.is_live = True
+                if not stream.was_live:
+                    member = guild.members[bot.get_user_from_stream(stream)]
+                    game = bot.get_playing_game(member.user)
+                    add = f", playing **{game}**" if game else ""
+                    message = f"**{member}** just went live{add}!\n{stream}"
+                    await bot.send_message(
+                        utils.get_announce_channel(bot.con, guild.id), message
+                    )
                 stream.was_live = stream.is_live
 
 
