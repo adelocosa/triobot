@@ -3,7 +3,7 @@ import logging.handlers
 import os
 import trio
 import sqlite3
-
+from typing import Any
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -36,11 +36,20 @@ bot = discord.Client(BOT_TOKEN)
 # * gradient role
 # - /live
 # - mumbot status updating
-# - discord stream status/notifications
 # - ding
 # - streampic
 # - streamgif
 # - /color random, role, specific
+
+
+@bot.event
+async def voice_state_update(data: dict[str, Any]):
+    guild_id = data["guild_id"]
+    member = bot.guilds[guild_id].members[data["user_id"]]
+    if member.is_live and not member.was_live:
+        message = f"`🔊 {member.nick}` just went live!"
+        await bot.send_message(utils.get_announce_channel(con, guild_id), message)
+    return
 
 
 @bot.slash_command
@@ -58,6 +67,14 @@ async def slap(interaction: discord.SlashCommand):
     )
     message = f"*{slapper} slaps {target} around a bit with a large trout*"
     await bot.interaction_response(interaction, message)
+    return
+
+
+@bot.slash_command
+async def setchannel(interaction: discord.SlashCommand):
+    guild_id = interaction.guild.id
+    channel_id = interaction.data["options"][0]["value"]
+    utils.insert_guild(con, guild_id, channel_id)
     return
 
 
@@ -135,6 +152,7 @@ def initialize_database() -> sqlite3.Connection:
     log.info("Connected to sqlite database.")
     utils.create_users_table(con)
     utils.create_userstreams_table(con)
+    utils.create_guilds_table(con)
     return con
 
 

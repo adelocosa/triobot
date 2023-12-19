@@ -1,7 +1,7 @@
 from __future__ import annotations
 import sqlite3
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from .stream import Stream
@@ -25,10 +25,10 @@ def create_userstreams_table(con: sqlite3.Connection):
     con.execute(
         """
     CREATE TABLE IF NOT EXISTS UserStreams (
-    StreamID INTEGER PRIMARY KEY,
-    UserID TEXT,
-    Stream STREAM,
-    FOREIGN KEY(UserID) REFERENCES Users(UserID)
+        StreamID INTEGER PRIMARY KEY,
+        UserID TEXT,
+        Stream STREAM,
+        FOREIGN KEY(UserID) REFERENCES Users(UserID)
     )
     """
     )
@@ -36,7 +36,20 @@ def create_userstreams_table(con: sqlite3.Connection):
     log.debug("Created UserStreams table.")
 
 
-def get_streams_by_userid(con: sqlite3.Connection, userid: str) -> list[Stream]:
+def create_guilds_table(con: sqlite3.Connection):
+    con.execute(
+        """
+    CREATE TABLE IF NOT EXISTS Guilds (
+        GuildID TEXT PRIMARY KEY,
+        AnnounceChannel TEXT
+    )
+    """
+    )
+    con.commit()
+    log.debug("Created Guilds table.")
+
+
+def get_streams_by_userid(con: sqlite3.Connection, user_id: str) -> list[Stream]:
     streams: list[Stream] = [
         s[1]
         for s in list(
@@ -47,7 +60,7 @@ def get_streams_by_userid(con: sqlite3.Connection, userid: str) -> list[Stream]:
         JOIN Users ON UserStreams.UserID = Users.UserID
         WHERE Users.UserID = ?
         """,
-                (userid,),
+                (user_id,),
             )
         )
     ]
@@ -55,20 +68,40 @@ def get_streams_by_userid(con: sqlite3.Connection, userid: str) -> list[Stream]:
     return streams
 
 
-def insert_user(con: sqlite3.Connection, userid: str):
+def get_announce_channel(con: sqlite3.Connection, guild_id: str) -> Optional[str]:
+    print(guild_id)
+    channel_id = con.execute(
+        "SELECT AnnounceChannel FROM Guilds WHERE GuildID = ?", (guild_id,)
+    ).fetchone()[0]
+    return channel_id
+
+
+def insert_user(con: sqlite3.Connection, user_id: str):
     con.execute(
         "INSERT OR IGNORE INTO Users (UserID) VALUES (?)",
-        (userid,),
+        (user_id,),
     )
     con.commit()
     log.debug("Executed insert user query.")
 
 
-def insert_stream(con: sqlite3.Connection, userid: str, stream: Stream):
+def insert_guild(con: sqlite3.Connection, guild_id: str, channel_id: str):
+    con.execute(
+        "INSERT OR REPLACE INTO Guilds (GuildID, AnnounceChannel) VALUES (?, ?)",
+        (
+            guild_id,
+            channel_id,
+        ),
+    )
+    con.commit()
+    log.debug("Executed insert guild query.")
+
+
+def insert_stream(con: sqlite3.Connection, user_id: str, stream: Stream):
     con.execute(
         "INSERT INTO UserStreams (UserID, Stream) VALUES (?, ?)",
         (
-            userid,
+            user_id,
             stream,
         ),
     )
