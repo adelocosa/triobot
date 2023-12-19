@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from .channel import Channel
 from .emoji import Emoji
 from .http_request import HTTPRequest
-from .member import GuildMember
+from .member import GuildMember, VoiceState
 
 if TYPE_CHECKING:
     from .client import Client
@@ -55,18 +55,10 @@ class Guild:
         return channels
 
     def parse_voice_states(self, voice_state_list: list[dict[str, Any]]):
-        for state in voice_state_list:
-            live = False
-            if "self_stream" in state.keys():
-                live = state["self_stream"]
-            elif "self_video" in state.keys() and not live:
-                live = state["self_video"]
-            if live and state["channel_id"]:
-                live = True
-            else:
-                live = False
-            self.members[state["user_id"]].was_live = self.members[state["user_id"]].is_live
-            self.members[state["user_id"]].is_live = live
+        for voice_data in voice_state_list:
+            self.members[voice_data["user_id"]].voice_state = VoiceState(
+                self, voice_data
+            )
 
     def update_activities(self, presence_list: list[dict]) -> None:
         for presence_data in presence_list:

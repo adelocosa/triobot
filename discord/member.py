@@ -7,6 +7,7 @@ from .user import User
 
 if TYPE_CHECKING:
     from .guild import Guild
+    from .channel import Channel
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ class GuildMember:
     def __init__(self, guild: Guild, data: dict[str, Any]):
         self.guild = guild
         self.nick: None | str = data.get("nick", None)
+        self.voice_state: None | VoiceState = None
         self.is_live: bool = False
         self.was_live: bool = False
         if data["user"]["id"] not in self.guild.client.users:
@@ -38,3 +40,17 @@ class GuildMember:
             return self.nick
         else:
             return self.user.username
+
+
+class VoiceState:
+    def __init__(self, guild: Guild, data: dict[str, Any]):
+        self.channel: None | Channel = None
+        if data["channel_id"]:
+            self.channel = guild.channels[data["channel_id"]]
+        self.user_id: str = data["user_id"]
+        self.stream: bool = data.get("self_stream", False)
+        self.video: bool = data["self_video"]
+
+        live: bool = (self.stream or self.video) and bool(self.channel)
+        guild.members[self.user_id].was_live = guild.members[self.user_id].is_live
+        guild.members[self.user_id].is_live = live
