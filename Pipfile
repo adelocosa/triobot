@@ -9,6 +9,9 @@ trio-websocket = "*"
 python-dotenv = "*"
 httpx = "*"
 streamlink = "*"
+colormath = "*"
+pillow = "*"
+opencv-python-headless = "*"
 
 [dev-packages]
 
