@@ -44,7 +44,7 @@ async def get_userid_from_username(username: str) -> str:
     return userid
 
 
-async def get_live_streams_by_usernames(usernames: list[str]) -> list[Optional[str]]:
+async def get_live_streams_by_usernames(usernames: list[str]) -> tuple[list[Optional[str]], bool]:
     live = []
     CLIENT_ID = os.environ.get("CLIENT_ID")
     TWITCH_TOKEN = os.environ.get("TWITCH_TOKEN")
@@ -63,7 +63,7 @@ async def get_live_streams_by_usernames(usernames: list[str]) -> list[Optional[s
         log.debug(json.dumps(dict(response.headers), indent=4))
     except:
         log.info(f"Couldn't get streams.")
-        return live
+        return live, False
     for stream in response.json()["data"]:
         live.append(stream["user_login"])
-    return live
+    return live, True
