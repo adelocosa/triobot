@@ -23,7 +23,7 @@ class Stream:
         self.username = username
         self.userid = userid
         self.is_live: bool = False
-        self.was_live: bool = True
+        self.was_live: bool = False
         self.valid: bool = False
         if not (self.service and self.username):
             self.url, self.service, self.username = self.parse_url(self.url)

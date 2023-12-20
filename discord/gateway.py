@@ -4,7 +4,7 @@ import json
 import logging
 import random
 import zlib
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from typing import TYPE_CHECKING, Any
 
 import trio
@@ -35,6 +35,22 @@ class Opcode(IntEnum):
     INVALID_SESSION = 9
     HELLO = 10
     HEARTBEAT_ACK = 11
+
+
+class DotColor(StrEnum):
+    RED = "dnd"
+    GREEN = "online"
+    ORANGE = "idle"
+    GRAY = "invisible"
+
+
+class ActivityType(IntEnum):
+    PLAYING = 0
+    STREAMING = 1
+    LISTENING = 2
+    WATCHING = 3
+    CUSTOM = 4
+    COMPETING = 5
 
 
 class GatewayConnection:
@@ -167,6 +183,9 @@ class GatewayConnection:
                     await send_gateway_message.send(build_resume())
                 else:
                     await send_gateway_message.send(build_identify())
+                await self.client.update_presence(
+                    DotColor.RED, ActivityType.WATCHING, "nobody :("
+                )
 
             elif opcode == Opcode.HEARTBEAT_ACK:
                 pass

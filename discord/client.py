@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable, Optional, Any
 
 import trio
 
-from .gateway import GatewayConnection
+from .gateway import GatewayConnection, Opcode, DotColor
 from .http_request import HTTPRequest
 
 if TYPE_CHECKING:
@@ -108,3 +108,20 @@ class Client:
         if not self.gateway_channel:
             return
         await self.gateway_channel.send(message)
+
+    async def update_presence(
+        self, color: str, activity: None | int = None, message: None | str = None
+    ):
+        payload = {}
+        payload["op"] = Opcode.PRESENCE_UPDATE
+        payload["d"] = {}
+        payload["d"]["since"] = None
+        payload["d"]["status"] = color
+        payload["d"]["afk"] = True if color == DotColor.ORANGE else False
+        if activity:
+            payload["d"]["activities"] = [{}]
+            payload["d"]["activities"][0]["name"] = message
+            payload["d"]["activities"][0]["type"] = activity
+
+        if self.gateway_channel:
+            await self.gateway_channel.send(payload)

@@ -60,17 +60,36 @@ class Mumbot(discord.Client):
                 streams.extend(bot.user_streams[user])
         return streams
 
-    def get_user_from_stream(self, stream: utils.Stream) -> discord.User:
+    def get_user_from_stream(self, stream: utils.Stream) -> None | discord.User:
         for user_id, streams in self.user_streams.items():
             if stream in streams:
                 return bot.users[user_id]
-        raise Exception("orphaned stream")
 
     def get_playing_game(self, user: discord.User) -> str:
         for activity in user.activities:
             if activity.type == discord.ActivityType.PLAYING:
                 return activity.name
         return ""
+
+    def generate_presence_args(self) -> tuple[str, int, str]:
+        live = 0
+        for guild in bot.guilds.values():
+            for member in guild.members.values():
+                if member.is_live:
+                    live += 1
+        for streams in bot.user_streams.values():
+            for stream in streams:
+                if stream.is_live:
+                    live += 1
+        color = discord.gateway.DotColor.GREEN
+        if live == 0:
+            color = discord.gateway.DotColor.RED
+            message = "nothing :("
+        elif live == 1:
+            message = "1 live stream"
+        else:
+            message = f"{live} live streams!"
+        return color, discord.gateway.ActivityType.WATCHING, message
 
 
 bot = Mumbot()
@@ -95,7 +114,11 @@ async def voice_state_update(data: dict[str, Any]):
         add = f", playing **{game}**" if game else ""
         message = f"**{member}** just went live{add}! \
                 \n`🔊 {member.voice_state.channel.name}`"
+        await bot.update_presence(*bot.generate_presence_args())
         await bot.send_message(utils.get_announce_channel(bot.con, guild_id), message)
+    elif member.was_live and not member.is_live:
+        await bot.update_presence(*bot.generate_presence_args())
+        member.was_live = False
     return
 
 
@@ -124,6 +147,8 @@ async def live(interaction: discord.SlashCommand):
         if stream.is_live:
             zero = False
             user = bot.get_user_from_stream(stream)
+            if not user:
+                continue
             game = bot.get_playing_game(user)
             add = f" - playing **{game}**" if game else ""
             message += f"\n**{interaction.guild.members[user.id]}** - {stream}{add}"
@@ -191,17 +216,24 @@ async def twitch_polling():
             for stream in streams:
                 if stream.username not in live:
                     stream.is_live = False
+                    if stream.was_live:
+                        await bot.update_presence(*bot.generate_presence_args())
+                        stream.was_live = False
                     continue
                 stream.is_live = True
                 if not stream.was_live:
-                    member = guild.members[bot.get_user_from_stream(stream).id]
+                    user = bot.get_user_from_stream(stream)
+                    if not user:
+                        continue
+                    member = guild.members[user.id]
                     game = bot.get_playing_game(member.user)
                     add = f", playing **{game}**" if game else ""
                     message = f"**{member}** just went live{add}!\n{stream}"
+                    await bot.update_presence(*bot.generate_presence_args())
                     await bot.send_message(
                         utils.get_announce_channel(bot.con, guild.id), message
                     )
-                stream.was_live = stream.is_live
+                stream.was_live = True
 
 
 if __name__ == "__main__":
