@@ -25,13 +25,14 @@ def patch_asscalar(a):
 
 
 setattr(numpy, "asscalar", patch_asscalar)
-
+if not os.path.exists("appdata"):
+    os.mkdir("appdata")
 log_format = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
 console_log = logging.StreamHandler()
 console_log.setLevel(logging.INFO)
 console_log.setFormatter(log_format)
 file_log = logging.handlers.RotatingFileHandler(
-    "debug.log", maxBytes=10000000, backupCount=5, encoding="utf8"
+    "appdata/debug.log", maxBytes=10000000, backupCount=5, encoding="utf8"
 )
 file_log.setLevel(logging.DEBUG)
 file_log.setFormatter(log_format)
@@ -43,7 +44,7 @@ log.addHandler(file_log)
 
 class Mumbot(discord.Client):
     def __init__(self):
-        load_dotenv()
+        load_dotenv("appdata/.env")
         BOT_TOKEN = os.environ.get("BOT_TOKEN")
         TWITCH_TOKEN = utils.get_twitch_bearer_token()
         assert isinstance(BOT_TOKEN, str)
@@ -62,7 +63,7 @@ class Mumbot(discord.Client):
     def initialize_database(self) -> sqlite3.Connection:
         sqlite3.register_adapter(utils.Stream, utils.adapt_stream)
         sqlite3.register_converter("STREAM", utils.convert_stream)
-        con = sqlite3.connect("mumbot.db", detect_types=sqlite3.PARSE_DECLTYPES)
+        con = sqlite3.connect("appdata/mumbot.db", detect_types=sqlite3.PARSE_DECLTYPES)
         log.info("Connected to sqlite database.")
         utils.create_users_table(con)
         utils.create_userstreams_table(con)
@@ -267,18 +268,20 @@ async def streampic(interaction: discord.SlashCommand):
         await bot.edit_interaction_response(interaction, "couldn't download stream")
         return
 
-    fname = "stream.bin"
+    fname = "appdata/stream.bin"
     open(fname, "wb").write(data)
     try:
         capture = cv2.VideoCapture(fname)
         imgdata = capture.read()[1]
         imgdata = imgdata[..., ::-1]  # BGR -> RGB
         img = Image.fromarray(imgdata)
-        img.save("frame.jpg")
+        img.save("appdata/frame.jpg")
         message = (
             f"Please enjoy this {utils.get_adjective()} streampic from *{streamname}*."
         )
-        await bot.edit_interaction_response_with_file(interaction, "frame.jpg", message)
+        await bot.edit_interaction_response_with_file(
+            interaction, "appdata/frame.jpg", message
+        )
     except:
         await bot.edit_interaction_response(interaction, "couldn't generate image")
 

@@ -41,7 +41,7 @@ def create_guilds_table(con: sqlite3.Connection):
         """
     CREATE TABLE IF NOT EXISTS Guilds (
         GuildID TEXT PRIMARY KEY,
-        AnnounceChannel TEXT
+        AnnounceChannel TEXT,
         RainbowRole TEXT
     )
     """
