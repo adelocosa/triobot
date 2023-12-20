@@ -55,6 +55,7 @@ class Stream:
             return False
         self.userid = await get_userid_from_username(self.username)
         if self.userid:
+            self.valid = True
             log.debug(f"{self.url} validated: {self.valid}")
             return True
         return False
