@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from typing import Any, ClassVar, TypeAlias
-
+from dotenv import load_dotenv
 import httpx
 
 Payload: TypeAlias = None | dict[str, Any]
@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 
 
 class HTTPRequest:
+    load_dotenv("./appdata/.env", override=True)
     TOKEN = os.environ.get("BOT_TOKEN")
     APP_ID = os.environ.get("APP_ID")
     API_URL: ClassVar[str] = "https://discord.com/api/v10"
@@ -40,6 +41,7 @@ class HTTPRequest:
         async with httpx.AsyncClient(headers=headers) as http_client:
             log.info(f"Sending HTTP {inspect.stack()[1][3]} request.")
             log.debug(json.dumps(payload, indent=4))
+            log.debug(headers)
             if not file:
                 self.response = await http_client.request(
                     method, url, **payload_format[method]
@@ -88,13 +90,14 @@ class HTTPRequest:
         route = f"/webhooks/{self.APP_ID}/{interaction_token}/messages/@original"
         method = "PATCH"
         return await self.send(method, route, payload)
-    
+
     async def edit_interaction_response_with_file(
         self, interaction_token: str, payload: Payload, file
     ) -> httpx.Response:
         route = f"/webhooks/{self.APP_ID}/{interaction_token}/messages/@original"
         method = "PATCH"
         return await self.send(method, route, payload, file)
+
     # channel requests
 
     async def create_reaction(

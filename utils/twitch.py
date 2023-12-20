@@ -4,11 +4,13 @@ import os
 import logging
 import json
 from typing import Optional
+from dotenv import load_dotenv
 
 log = logging.getLogger(__name__)
 
 
 def get_twitch_bearer_token() -> Optional[str]:
+    load_dotenv("./appdata/.env", override=True)
     CLIENT_ID = os.environ.get("CLIENT_ID")
     CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
     get_token_url = f"https://id.twitch.tv/oauth2/token?client_id={CLIENT_ID}&client_secret={CLIENT_SECRET}&grant_type=client_credentials"
@@ -25,6 +27,7 @@ def get_twitch_bearer_token() -> Optional[str]:
 
 
 async def get_userid_from_username(username: str) -> str:
+    load_dotenv("./appdata/.env", override=True)
     CLIENT_ID = os.environ.get("CLIENT_ID")
     TWITCH_TOKEN = os.environ.get("TWITCH_TOKEN")
     headers = {
@@ -44,8 +47,14 @@ async def get_userid_from_username(username: str) -> str:
     return userid
 
 
-async def get_live_streams_by_usernames(usernames: list[str]) -> tuple[list[Optional[str]], bool]:
+async def get_live_streams_by_usernames(
+    usernames: list[str],
+) -> tuple[list[Optional[str]], bool]:
     live = []
+    if not usernames:
+        log.info(f"Couldn't get streams.")
+        return live, False
+    load_dotenv("./appdata/.env", override=True)
     CLIENT_ID = os.environ.get("CLIENT_ID")
     TWITCH_TOKEN = os.environ.get("TWITCH_TOKEN")
     headers = {

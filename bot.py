@@ -25,14 +25,14 @@ def patch_asscalar(a):
 
 
 setattr(numpy, "asscalar", patch_asscalar)
-if not os.path.exists("appdata"):
-    os.mkdir("appdata")
+if not os.path.exists("./appdata"):
+    os.mkdir("./appdata")
 log_format = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
 console_log = logging.StreamHandler()
 console_log.setLevel(logging.INFO)
 console_log.setFormatter(log_format)
 file_log = logging.handlers.RotatingFileHandler(
-    "appdata/debug.log", maxBytes=10000000, backupCount=5, encoding="utf8"
+    "./appdata/debug.log", maxBytes=10000000, backupCount=5, encoding="utf8"
 )
 file_log.setLevel(logging.DEBUG)
 file_log.setFormatter(log_format)
@@ -44,8 +44,9 @@ log.addHandler(file_log)
 
 class Mumbot(discord.Client):
     def __init__(self):
-        load_dotenv("appdata/.env")
+        load_dotenv("./appdata/.env", override=True)
         BOT_TOKEN = os.environ.get("BOT_TOKEN")
+        print(BOT_TOKEN)
         TWITCH_TOKEN = utils.get_twitch_bearer_token()
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
@@ -245,6 +246,7 @@ async def streampic(interaction: discord.SlashCommand):
     streamname = interaction.data["options"][0]["value"]
     session = Streamlink()
     options = Options()
+    load_dotenv("./appdata/.env", override=True)
     TURBO_OAUTH = os.environ.get("TURBO_OAUTH")
     options.set("api-header", [("Authorization", f"OAuth {TURBO_OAUTH}")])
     options.set("low-latency", True)
@@ -268,19 +270,19 @@ async def streampic(interaction: discord.SlashCommand):
         await bot.edit_interaction_response(interaction, "couldn't download stream")
         return
 
-    fname = "appdata/stream.bin"
+    fname = "./appdata/stream.bin"
     open(fname, "wb").write(data)
     try:
         capture = cv2.VideoCapture(fname)
         imgdata = capture.read()[1]
         imgdata = imgdata[..., ::-1]  # BGR -> RGB
         img = Image.fromarray(imgdata)
-        img.save("appdata/frame.jpg")
+        img.save("./appdata/frame.jpg")
         message = (
             f"Please enjoy this {utils.get_adjective()} streampic from *{streamname}*."
         )
         await bot.edit_interaction_response_with_file(
-            interaction, "appdata/frame.jpg", message
+            interaction, "./appdata/frame.jpg", message
         )
     except:
         await bot.edit_interaction_response(interaction, "couldn't generate image")
