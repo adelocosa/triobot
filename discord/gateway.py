@@ -183,9 +183,6 @@ class GatewayConnection:
                     await send_gateway_message.send(build_resume())
                 else:
                     await send_gateway_message.send(build_identify())
-                await self.client.update_presence(
-                    DotColor.RED, ActivityType.WATCHING, "nobody :("
-                )
 
             elif opcode == Opcode.HEARTBEAT_ACK:
                 pass

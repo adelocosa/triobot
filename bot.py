@@ -72,23 +72,28 @@ class Mumbot(discord.Client):
         return ""
 
     def generate_presence_args(self) -> tuple[str, int, str]:
-        live = 0
+        discord_streams: list[discord.GuildMember] = []
+        linked_streams: list[utils.Stream] = []
         for guild in bot.guilds.values():
             for member in guild.members.values():
                 if member.is_live:
-                    live += 1
+                    discord_streams.append(member)
         for streams in bot.user_streams.values():
             for stream in streams:
                 if stream.is_live:
-                    live += 1
+                    linked_streams.append(stream)
         color = discord.gateway.DotColor.GREEN
-        if live == 0:
+        if len(linked_streams + discord_streams) == 0:
             color = discord.gateway.DotColor.RED
             message = "nothing :("
-        elif live == 1:
-            message = "1 live stream"
+        elif len(linked_streams + discord_streams) == 1:
+            if discord_streams:
+                name = str(discord_streams[0])
+            else:
+                name = linked_streams[0].username
+            message = f"{name} :)"
         else:
-            message = f"{live} live streams!"
+            message = f"{len(linked_streams + discord_streams)} live streams!"
         return color, discord.gateway.ActivityType.WATCHING, message
 
 
@@ -96,7 +101,6 @@ bot = Mumbot()
 
 # to implement for feature parity: (* critical)
 # * gradient role
-# - mumbot status updating
 # - ding
 # - streampic
 # - streamgif
@@ -198,11 +202,18 @@ async def stream(interaction: discord.SlashCommand):
                 utils.delete_stream(bot.con, linked_stream)
                 bot.user_streams[userid].remove(new_stream)
                 message = f"unlinked {new_stream}"
+                await bot.update_presence(*bot.generate_presence_args())
                 await bot.interaction_response(interaction, message, ephemeral)
                 return
         message = "stream not found"
         await bot.interaction_response(interaction, message, ephemeral)
         return
+
+
+@bot.task
+async def set_initial_presence():
+    await trio.sleep(2)
+    await bot.update_presence(*bot.generate_presence_args())
 
 
 @bot.task
