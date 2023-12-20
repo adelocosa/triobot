@@ -20,7 +20,7 @@ class HTTPRequest:
         self.response: None | httpx.Response = None
 
     async def send(
-        self, method: str, route: str, payload: Payload = None
+        self, method: str, route: str, payload: Payload = None, file=None
     ) -> httpx.Response:
         # get correct args for request based on method
         payload_format = {
@@ -40,9 +40,14 @@ class HTTPRequest:
         async with httpx.AsyncClient(headers=headers) as http_client:
             log.info(f"Sending HTTP {inspect.stack()[1][3]} request.")
             log.debug(json.dumps(payload, indent=4))
-            self.response = await http_client.request(
-                method, url, **payload_format[method]
-            )
+            if not file:
+                self.response = await http_client.request(
+                    method, url, **payload_format[method]
+                )
+            else:
+                self.response = await http_client.request(
+                    method, url, data=payload, files=file
+                )
             log.info(f"Request returned status {self.response.status_code}.")
             log.debug(json.dumps(dict(self.response.headers), indent=4))
             if self.response.status_code != 204:
@@ -77,6 +82,19 @@ class HTTPRequest:
         method = "POST"
         return await self.send(method, route, payload)
 
+    async def edit_interaction_response(
+        self, interaction_token: str, payload: Payload = None
+    ) -> httpx.Response:
+        route = f"/webhooks/{self.APP_ID}/{interaction_token}/messages/@original"
+        method = "PATCH"
+        return await self.send(method, route, payload)
+    
+    async def edit_interaction_response_with_file(
+        self, interaction_token: str, payload: Payload, file
+    ) -> httpx.Response:
+        route = f"/webhooks/{self.APP_ID}/{interaction_token}/messages/@original"
+        method = "PATCH"
+        return await self.send(method, route, payload, file)
     # channel requests
 
     async def create_reaction(
@@ -99,6 +117,13 @@ class HTTPRequest:
         route = f"/channels/{channel_id}/messages"
         method = "POST"
         return await self.send(method, route, payload)
+
+    async def create_message_with_file(
+        self, channel_id: str, payload: dict[str, Any], file
+    ) -> httpx.Response:
+        route = f"/channels/{channel_id}/messages"
+        method = "POST"
+        return await self.send(method, route, payload, file)
 
     async def edit_message(
         self, channel_id: str, message_id: str, payload: Payload = None

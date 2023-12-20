@@ -105,6 +105,11 @@ class Event:
             member = guild.members[self.data["user"]["id"]]
             member.update(self.data)
 
+    def handle_guild_role_update(self):
+        guild = self.client.guilds[self.data["guild_id"]]
+        role = guild.roles[self.data["role"]["id"]]
+        role.update(self.data["role"])
+
     def handle_presence_update(self):
         user = self.client.users[self.data["user"]["id"]]
         user.update_activities(self.data["activities"])

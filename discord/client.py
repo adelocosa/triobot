@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import time
+import json
 from typing import TYPE_CHECKING, Callable, Optional, Any
 
 import trio
@@ -96,6 +97,20 @@ class Client:
         r = HTTPRequest()
         await r.interaction_response(interaction.id, interaction.token, payload)
 
+    async def edit_interaction_response(self, interaction: SlashCommand, message: str):
+        payload = {"content": message}
+        r = HTTPRequest()
+        await r.edit_interaction_response(interaction.token, payload)
+
+    async def edit_interaction_response_with_file(
+        self, interaction: SlashCommand, filename: str, message: str
+    ):
+        pj = {"content": message}
+        pj2 = {"payload_json": json.dumps(pj)}
+        file = {"file": (filename, open(filename, "rb"))}
+        r = HTTPRequest()
+        await r.edit_interaction_response_with_file(interaction.token, pj2, file)
+
     async def send_message(self, channel: Optional[str], message: str):
         if not channel:
             log.debug("Tried to send a message, but had no channel.")
@@ -103,6 +118,23 @@ class Client:
         payload = {"content": message}
         r = HTTPRequest()
         await r.create_message(channel, payload)
+
+    async def send_file(
+        self, channel: Optional[str], filename: str, message: None | str = None
+    ):
+        if not channel:
+            log.debug("Tried to send a message, but had no channel.")
+            return
+        pj = {"content": message}
+        pj2 = {"payload_json": json.dumps(pj)}
+        file = {"file": (filename, open(filename, "rb"))}
+        r = HTTPRequest()
+        await r.create_message_with_file(channel, pj2, file)
+
+    async def update_role(self, guild_id, role_id: str, color: int):
+        payload = {"color": color}
+        r = HTTPRequest()
+        await r.modify_guild_role(guild_id, role_id, payload)
 
     async def send_gateway_message(self, message: dict[str, Any]):
         if not self.gateway_channel:

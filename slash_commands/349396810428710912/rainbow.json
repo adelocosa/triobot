@@ -1,0 +1,13 @@
+{
+    "name": "rainbow",
+    "type": 1,
+    "description": "[ADMIN] Sets the rainbow role",
+    "options": [
+        {
+            "name": "id",
+            "description": "role id to rainbowize",
+            "type": 3,
+            "required": true
+        }
+    ]
+}

@@ -7,6 +7,7 @@ from .channel import Channel
 from .emoji import Emoji
 from .http_request import HTTPRequest
 from .member import GuildMember, VoiceState
+from colormath.color_objects import sRGBColor
 
 if TYPE_CHECKING:
     from .client import Client
@@ -22,6 +23,7 @@ class Guild:
         self.emojis: dict[str, Emoji] = self.parse_emojis(data["emojis"])
         self.members: dict[str, GuildMember] = self.parse_members(data["members"])
         self.channels: dict[str, Channel] = self.parse_channels(data["channels"])
+        self.roles: dict[str, Role] = self.parse_roles(data["roles"])
         if data.get("voice_states", None):
             self.parse_voice_states(data["voice_states"])
         if data.get("presences", None):
@@ -54,6 +56,13 @@ class Guild:
             channels[channel.id] = channel
         return channels
 
+    def parse_roles(self, role_list: list[dict]) -> dict[str, Role]:
+        roles = {}
+        for role_data in role_list:
+            role = Role(self, role_data)
+            roles[role.id] = role
+        return roles
+
     def parse_voice_states(self, voice_state_list: list[dict[str, Any]]):
         for voice_data in voice_state_list:
             self.members[voice_data["user_id"]].voice_state = VoiceState(
@@ -74,3 +83,29 @@ class Guild:
             return self.emojis
         self.emojis = self.parse_emojis(response.json())
         return self.emojis
+
+
+class Role:
+    def __init__(self, guild: Guild, data: dict[str, Any]):
+        self.guild: Guild = guild
+        self.name: str = data["name"]
+        self.id: str = data["id"]
+        self.color: int = data["color"]
+        r = self.color >> 16
+        g = (self.color & 65280) >> 8
+        b = self.color & 255
+        self.srgb_color: sRGBColor = sRGBColor(r, g, b, is_upscaled=True)
+        log.debug(
+            f"Added role {self.id} ({self.name}) to guild {self.guild.id} ({self.guild.name})."
+        )
+
+    def update(self, data: dict[str, Any]):
+        self.name: str = data["name"]
+        self.color: int = data["color"]
+        r = self.color >> 16
+        g = (self.color & 65280) >> 8
+        b = self.color & 255
+        self.srgb_color: sRGBColor = sRGBColor(r, g, b, is_upscaled=True)
+        log.debug(
+            f"Updated role {self.id} ({self.name}) in guild {self.guild.id} ({self.guild.name})."
+        )

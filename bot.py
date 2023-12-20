@@ -3,14 +3,28 @@ import logging.handlers
 import os
 import trio
 import sqlite3
+import random
+import numpy
+import cv2
+from PIL import Image
+from streamlink.session import Streamlink
+from streamlink.options import Options
+from colormath.color_conversions import convert_color
+from colormath.color_diff import delta_e_cie2000
+from colormath.color_objects import LabColor, sRGBColor
 from collections import defaultdict
-from typing import Any, Optional
+from typing import Any
 from dotenv import load_dotenv
-
-load_dotenv()
 
 import discord
 import utils
+
+
+def patch_asscalar(a):
+    return a.item()
+
+
+setattr(numpy, "asscalar", patch_asscalar)
 
 log_format = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
 console_log = logging.StreamHandler()
@@ -29,6 +43,7 @@ log.addHandler(file_log)
 
 class Mumbot(discord.Client):
     def __init__(self):
+        load_dotenv()
         BOT_TOKEN = os.environ.get("BOT_TOKEN")
         TWITCH_TOKEN = utils.get_twitch_bearer_token()
         assert isinstance(BOT_TOKEN, str)
@@ -42,6 +57,7 @@ class Mumbot(discord.Client):
         streams = utils.get_all_streams(self.con)
         for stream in streams:
             self.user_streams[stream[0]].append(stream[1])
+        self.color_list: list[sRGBColor] = []
 
     def initialize_database(self) -> sqlite3.Connection:
         sqlite3.register_adapter(utils.Stream, utils.adapt_stream)
@@ -100,9 +116,7 @@ class Mumbot(discord.Client):
 bot = Mumbot()
 
 # to implement for feature parity: (* critical)
-# * gradient role
 # - ding
-# - streampic
 # - streamgif
 # - /color random, role, specific
 
@@ -130,7 +144,17 @@ async def voice_state_update(data: dict[str, Any]):
 async def setchannel(interaction: discord.SlashCommand):
     guild_id = interaction.guild.id
     channel_id = interaction.data["options"][0]["value"]
-    utils.insert_guild(bot.con, guild_id, channel_id)
+    utils.insert_announce_channel(bot.con, guild_id, channel_id)
+    await bot.interaction_response(interaction, "updated!", True)
+    return
+
+
+@bot.slash_command
+async def rainbow(interaction: discord.SlashCommand):
+    guild_id = interaction.guild.id
+    role_id = interaction.data["options"][0]["value"]
+    utils.insert_rainbow_role(bot.con, guild_id, role_id)
+    await bot.interaction_response(interaction, "updated!", True)
     return
 
 
@@ -215,6 +239,55 @@ async def mystreams(interaction: discord.SlashCommand):
     return
 
 
+@bot.slash_command
+async def streampic(interaction: discord.SlashCommand):
+    streamname = interaction.data["options"][0]["value"]
+    session = Streamlink()
+    options = Options()
+    TURBO_OAUTH = os.environ.get("TURBO_OAUTH")
+    options.set("api-header", [("Authorization", f"OAuth {TURBO_OAUTH}")])
+    options.set("low-latency", True)
+    message = f"Generating a streampic from *{streamname}*..."
+    await bot.interaction_response(interaction, message)
+    try:
+        streams = session.streams(f"https://twitch.tv/{streamname}", options)
+    except:
+        await bot.edit_interaction_response(interaction, "Couldn't find stream.")
+        return
+    try:
+        stream = streams["best"]
+    except:
+        await bot.edit_interaction_response(interaction, f"{streamname} is offline!")
+        return
+    try:
+        with stream.open() as fd:
+            await trio.sleep(1)
+            data = fd.read(1000000)
+    except:
+        await bot.edit_interaction_response(interaction, "couldn't download stream")
+        return
+
+    fname = "stream.bin"
+    open(fname, "wb").write(data)
+    try:
+        capture = cv2.VideoCapture(fname)
+        imgdata = capture.read()[1]
+        imgdata = imgdata[..., ::-1]  # BGR -> RGB
+        img = Image.fromarray(imgdata)
+        img.save("frame.jpg")
+        message = (
+            f"Please enjoy this {utils.get_adjective()} streampic from *{streamname}*."
+        )
+        await bot.edit_interaction_response_with_file(interaction, "frame.jpg", message)
+    except:
+        await bot.edit_interaction_response(interaction, "couldn't generate image")
+
+
+@bot.slash_command
+async def sp(interaction: discord.SlashCommand):
+    await streampic(interaction)
+
+
 @bot.task
 async def set_initial_presence():
     await trio.sleep(2)
@@ -223,12 +296,15 @@ async def set_initial_presence():
 
 @bot.task
 async def twitch_polling():
+    first = True
     while True:
         await trio.sleep(5)
         for guild in bot.guilds.values():
             streams = bot.get_guild_streams(guild.id)
             usernames = [stream.username for stream in streams]
-            live = await utils.get_live_streams_by_usernames(usernames)
+            live, success = await utils.get_live_streams_by_usernames(usernames)
+            if not success:
+                continue
             for stream in streams:
                 if stream.username not in live:
                     stream.is_live = False
@@ -246,10 +322,67 @@ async def twitch_polling():
                     add = f", playing **{game}**" if game else ""
                     message = f"**{member}** just went live{add}!\n{stream}"
                     await bot.update_presence(*bot.generate_presence_args())
-                    await bot.send_message(
-                        utils.get_announce_channel(bot.con, guild.id), message
-                    )
+                    if not first:
+                        await bot.send_message(
+                            utils.get_announce_channel(bot.con, guild.id), message
+                        )
                 stream.was_live = True
+        first = False
+
+
+@bot.task
+async def rainbow_role():
+    def generate_lab_gradient(
+        color1: sRGBColor, color2: sRGBColor, steps
+    ) -> list[sRGBColor]:
+        c1: LabColor = convert_color(color1, LabColor)
+        c2: LabColor = convert_color(color2, LabColor)
+        dl = (c1.lab_l - c2.lab_l) / steps
+        da = (c1.lab_a - c2.lab_a) / steps
+        db = (c1.lab_b - c2.lab_b) / steps
+        gradient: list[sRGBColor] = []
+        for _ in range(steps):
+            c1.lab_l -= dl
+            c1.lab_a -= da
+            c1.lab_b -= db
+            newcolor: sRGBColor = convert_color(c1, sRGBColor)
+            gradient.append(newcolor)
+        return gradient
+
+    await trio.sleep(2)
+    while True:
+        for guild in bot.guilds.values():
+            rainbow_role = utils.get_rainbow_role(bot.con, guild.id)
+            if not rainbow_role:
+                continue
+            log.debug(f"Got rainbow role {rainbow_role} for guild {guild.id}")
+            if not bot.color_list:
+                current_color = guild.roles[rainbow_role].srgb_color
+                c1lab: sRGBColor = convert_color(current_color, LabColor)
+                if random.choice(range(200)) == 69:
+                    next_color: sRGBColor = sRGBColor.new_from_rgb_hex("#36393F")
+                    c2lab: LabColor = convert_color(next_color, LabColor)
+                    delta_e = delta_e_cie2000(c1lab, c2lab)
+                else:
+                    while True:
+                        next_color: sRGBColor = sRGBColor(
+                            random.random(), random.random(), random.random()
+                        )
+                        c2lab: LabColor = convert_color(next_color, LabColor)
+                        if c2lab.lab_l > 40:
+                            break
+                    delta_e = delta_e_cie2000(c1lab, c2lab)
+                bot.color_list = generate_lab_gradient(
+                    current_color, next_color, int(delta_e)
+                )
+
+            log.debug(f"gradient: {[i.get_rgb_hex() for i in bot.color_list]}")
+            nextcolor = bot.color_list.pop(0)
+            rgb = nextcolor.get_upscaled_value_tuple()
+            log.debug(f"next color: {rgb}")
+            finalcolor = 65536 * rgb[0] + 256 * rgb[1] + rgb[2]
+            await bot.update_role(guild.id, rainbow_role, finalcolor)
+        await trio.sleep(120)
 
 
 if __name__ == "__main__":

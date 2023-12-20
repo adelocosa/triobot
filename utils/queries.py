@@ -42,6 +42,7 @@ def create_guilds_table(con: sqlite3.Connection):
     CREATE TABLE IF NOT EXISTS Guilds (
         GuildID TEXT PRIMARY KEY,
         AnnounceChannel TEXT
+        RainbowRole TEXT
     )
     """
     )
@@ -84,6 +85,16 @@ def get_announce_channel(con: sqlite3.Connection, guild_id: str) -> Optional[str
     return None
 
 
+def get_rainbow_role(con: sqlite3.Connection, guild_id: str) -> Optional[str]:
+    role_id = con.execute(
+        "SELECT RainbowRole FROM Guilds WHERE GuildID = ?", (guild_id,)
+    ).fetchone()
+    log.debug("Executed get rainbow role query.")
+    if role_id:
+        return role_id[0]
+    return None
+
+
 def insert_user(con: sqlite3.Connection, user_id: str):
     con.execute(
         "INSERT OR IGNORE INTO Users (UserID) VALUES (?)",
@@ -93,16 +104,52 @@ def insert_user(con: sqlite3.Connection, user_id: str):
     log.debug("Executed insert user query.")
 
 
-def insert_guild(con: sqlite3.Connection, guild_id: str, channel_id: str):
-    con.execute(
-        "INSERT OR REPLACE INTO Guilds (GuildID, AnnounceChannel) VALUES (?, ?)",
-        (
-            guild_id,
-            channel_id,
-        ),
-    )
+def insert_announce_channel(con: sqlite3.Connection, guild_id: str, channel_id: str):
+    exists = con.execute(
+        "SELECT 1 FROM Guilds WHERE GuildID = ? LIMIT 1", (guild_id,)
+    ).fetchone()
+    if exists:
+        con.execute(
+            "UPDATE Guilds SET AnnounceChannel = ? WHERE GuildID = ?",
+            (
+                channel_id,
+                guild_id,
+            ),
+        )
+    else:
+        con.execute(
+            "INSERT INTO Guilds (GuildID, AnnounceChannel) VALUES (?, ?)",
+            (
+                guild_id,
+                channel_id,
+            ),
+        )
     con.commit()
-    log.debug("Executed insert guild query.")
+    log.debug("Executed insert announce channel query.")
+
+
+def insert_rainbow_role(con: sqlite3.Connection, guild_id: str, role_id: str):
+    exists = con.execute(
+        "SELECT 1 FROM Guilds WHERE GuildID = ? LIMIT 1", (guild_id,)
+    ).fetchone()
+    if exists:
+        con.execute(
+            "UPDATE Guilds SET RainbowRole = ? WHERE GuildID = ?",
+            (
+                role_id,
+                guild_id,
+            ),
+        )
+    else:
+        con.execute(
+            "INSERT INTO Guilds (GuildID, RainbowRole) VALUES (?, ?)",
+            (
+                guild_id,
+                role_id,
+            ),
+        )
+    con.commit()
+    log.debug("Executed insert announce channel query.")
 
 
 def insert_stream(con: sqlite3.Connection, user_id: str, stream: Stream):
