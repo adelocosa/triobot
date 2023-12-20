@@ -30,8 +30,8 @@ log.addHandler(file_log)
 class Mumbot(discord.Client):
     def __init__(self):
         BOT_TOKEN = os.environ.get("BOT_TOKEN")
-        assert isinstance(BOT_TOKEN, str)
         TWITCH_TOKEN = utils.get_twitch_bearer_token()
+        assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
         log.info("Token found. Initializing bot...")
@@ -163,51 +163,56 @@ async def live(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
-async def stream(interaction: discord.SlashCommand):
+async def link(interaction: discord.SlashCommand):
     ephemeral = True
     userid = interaction.member.user.id
-    subcommand = interaction.data["options"][0]["name"]
-
-    if subcommand == "list":
-        x = 1
-        message = "linked streams:"
-        for entry in bot.user_streams[userid]:
-            message += f"\n{x}. {entry}"
-            x += 1
+    url = interaction.data["options"][0]["value"]
+    new_stream = utils.Stream(url=url)
+    if not await new_stream.validate():
+        message = "couldn't validate stream"
         await bot.interaction_response(interaction, message, ephemeral)
         return
-
-    url = interaction.data["options"][0]["options"][0]["value"]
-
-    if subcommand == "link":
-        new_stream = utils.Stream(url=url)
-        if not await new_stream.validate():
-            message = "couldn't validate stream"
-            await bot.interaction_response(interaction, message, ephemeral)
-            return
-        utils.insert_user(bot.con, userid)
-        if new_stream in bot.user_streams[userid]:
-            message = "stream already exists!"
-            await bot.interaction_response(interaction, message, ephemeral)
-            return
-        utils.insert_stream(bot.con, userid, new_stream)
-        bot.user_streams[userid].append(new_stream)
-        await bot.interaction_response(interaction, f"linked {new_stream}", ephemeral)
-        return
-
-    if subcommand == "unlink":
-        new_stream = utils.Stream(url=url)
-        for linked_stream in bot.user_streams[userid]:
-            if linked_stream == new_stream:
-                utils.delete_stream(bot.con, linked_stream)
-                bot.user_streams[userid].remove(new_stream)
-                message = f"unlinked {new_stream}"
-                await bot.update_presence(*bot.generate_presence_args())
-                await bot.interaction_response(interaction, message, ephemeral)
-                return
-        message = "stream not found"
+    utils.insert_user(bot.con, userid)
+    if new_stream in bot.user_streams[userid]:
+        message = "stream already exists!"
         await bot.interaction_response(interaction, message, ephemeral)
         return
+    utils.insert_stream(bot.con, userid, new_stream)
+    bot.user_streams[userid].append(new_stream)
+    await bot.interaction_response(interaction, f"linked {new_stream}", ephemeral)
+    return
+
+
+@bot.slash_command
+async def unlink(interaction: discord.SlashCommand):
+    ephemeral = True
+    userid = interaction.member.user.id
+    url = interaction.data["options"][0]["value"]
+    new_stream = utils.Stream(url=url)
+    for linked_stream in bot.user_streams[userid]:
+        if linked_stream == new_stream:
+            utils.delete_stream(bot.con, linked_stream)
+            bot.user_streams[userid].remove(new_stream)
+            message = f"unlinked {new_stream}"
+            await bot.update_presence(*bot.generate_presence_args())
+            await bot.interaction_response(interaction, message, ephemeral)
+            return
+    message = "stream not found"
+    await bot.interaction_response(interaction, message, ephemeral)
+    return
+
+
+@bot.slash_command
+async def mystreams(interaction: discord.SlashCommand):
+    ephemeral = True
+    userid = interaction.member.user.id
+    x = 1
+    message = "Linked streams:"
+    for entry in bot.user_streams[userid]:
+        message += f"\n{x}. {entry}"
+        x += 1
+    await bot.interaction_response(interaction, message, ephemeral)
+    return
 
 
 @bot.task
