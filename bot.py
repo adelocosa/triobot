@@ -53,7 +53,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.02...")
+        log.info("Token found. Initializing mumbot v1.03...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -164,6 +164,31 @@ class Mumbot(discord.Client):
         else:
             message = f"{len(linked_streams + discord_streams)} live streams!"
         return color, discord.gateway.ActivityType.WATCHING, message
+
+    async def generate_thumbnail(self, username) -> bool:
+        session = Streamlink()
+        options = Options()
+        load_dotenv("./appdata/.env", override=True)
+        TWITCH_TURBO_OAUTH = os.environ.get("TWITCH_TURBO_OAUTH")
+        options.set("api-header", [("Authorization", f"OAuth {TWITCH_TURBO_OAUTH}")])
+        options.set("low-latency", True)
+        try:
+            streams = session.streams(f"https://twitch.tv/{username}", options)
+            stream = streams["best"]
+            with stream.open() as fd:
+                await trio.sleep(1)
+                data = fd.read(1000000)
+            fname = "./appdata/stream.bin"
+            open(fname, "wb").write(data)
+            capture = cv2.VideoCapture(fname)
+            imgdata = capture.read()[1]
+            imgdata = imgdata[..., ::-1]  # BGR -> RGB
+            img = Image.fromarray(imgdata)
+            img.thumbnail((320, 180))
+            img.save("./appdata/frame.jpg")
+            return True
+        except:
+            return False
 
 
 bot = Mumbot()
@@ -337,6 +362,7 @@ async def streampic(interaction: discord.Interaction):
         imgdata = capture.read()[1]
         imgdata = imgdata[..., ::-1]  # BGR -> RGB
         img = Image.fromarray(imgdata)
+        img.thumbnail((320, 180))
         img.save("./appdata/frame.jpg")
         message = (
             f"Please enjoy this {utils.get_adjective()} streampic from *{streamname}*."
@@ -382,9 +408,12 @@ async def twitch_polling():
                     message = f"**{member}** just went live{add}!\n{stream}"
                     await bot.update_presence(*bot.generate_presence_args())
                     if not first:
-                        await bot.send_message(
-                            utils.get_announce_channel(bot.con, guild.id), message
-                        )
+                        if await bot.generate_thumbnail(stream.username):
+                            await bot.send_file(
+                                utils.get_announce_channel(bot.con, guild.id),
+                                "./appdata/frame.jpg",
+                                message,
+                            )
                 stream.was_live = True
         first = False
 
