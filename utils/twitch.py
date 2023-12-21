@@ -36,7 +36,6 @@ async def get_userid_from_username(username: str) -> str:
     }
     url = f"https://api.twitch.tv/helix/users?login={username}"
     try:
-        log.info("Sending twitch Get Users request.")
         response = httpx.get(url, headers=headers)
         log.debug(json.dumps(response.json(), indent=4))
         userid = response.json()["data"][0]["id"]
@@ -66,8 +65,9 @@ async def get_live_streams_by_usernames(
         url += f"user_login={username}&"
     url += "type=live&first=100"
     try:
-        log.info("Sending twitch Get Streams request.")
+        logging.getLogger("httpx").setLevel(logging.WARNING)
         response = httpx.get(url, headers=headers)
+        logging.getLogger("httpx").setLevel(logging.DEBUG)
         log.debug(json.dumps(response.json(), indent=4))
         log.debug(json.dumps(dict(response.headers), indent=4))
         for stream in response.json()["data"]:

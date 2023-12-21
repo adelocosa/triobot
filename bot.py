@@ -54,7 +54,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing bot...")
+        log.info("Token found. Initializing mumbot v1.01...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -442,7 +442,7 @@ async def rainbow_role():
             log.debug(f"next color: {rgb}")
             finalcolor = 65536 * rgb[0] + 256 * rgb[1] + rgb[2]
             await bot.update_role(guild.id, rainbow_role, finalcolor)
-        await trio.sleep(120)
+        await trio.sleep(90)
 
 
 if __name__ == "__main__":

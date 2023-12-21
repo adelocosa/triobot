@@ -9,6 +9,7 @@ import httpx
 Payload: TypeAlias = None | dict[str, Any]
 
 log = logging.getLogger(__name__)
+logging.getLogger("httpcore").setLevel(logging.INFO)
 
 
 class HTTPRequest:
