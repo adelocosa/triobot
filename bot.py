@@ -49,12 +49,11 @@ class Mumbot(discord.Client):
         load_dotenv("./appdata/.env", override=True)
         self.owner_id = os.environ.get("OWNER_ID")
         BOT_TOKEN = os.environ.get("BOT_TOKEN")
-        print(BOT_TOKEN)
         TWITCH_TOKEN = utils.get_twitch_bearer_token()
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.01...")
+        log.info("Token found. Initializing mumbot v1.02...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -179,9 +178,9 @@ bot = Mumbot()
 async def guild_create(data: dict[str, Any]):
     await bot.update_presence(*bot.generate_presence_args())
     await bot.register_slash_commands(data["id"])
-    admin_commands = ["rainbow", "setchannel"]
-    for command in admin_commands:
-        await bot.set_command_permissions(data["id"], command)
+    # admin_commands = ["rainbow", "setchannel"]
+    # for command in admin_commands:
+    #     await bot.set_command_permissions(data["id"], command)
 
 
 @bot.event
