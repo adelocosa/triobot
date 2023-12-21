@@ -22,6 +22,7 @@ class ActivityType(IntEnum):
     WATCHING = 3
     CUSTOM = 4
     COMPETING = 5
+    GAMING = 6
 
 
 class User:
