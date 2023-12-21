@@ -8,14 +8,14 @@ if TYPE_CHECKING:
     from .guild import Guild
     from .member import GuildMember
 
-class InteractionType(IntEnum):
 
+class InteractionType(IntEnum):
     SLASH_COMMAND = 2
     MESSAGE_COMPONENT = 3
     AUTOCOMPLETE = 4
 
 
-class SlashCommand:
+class Interaction:
     def __init__(self, guild: Guild, data: dict[str, Any]):
         self.guild = guild
         self.id: str = data["id"]

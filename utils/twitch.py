@@ -11,9 +11,9 @@ log = logging.getLogger(__name__)
 
 def get_twitch_bearer_token() -> Optional[str]:
     load_dotenv("./appdata/.env", override=True)
-    CLIENT_ID = os.environ.get("CLIENT_ID")
-    CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-    get_token_url = f"https://id.twitch.tv/oauth2/token?client_id={CLIENT_ID}&client_secret={CLIENT_SECRET}&grant_type=client_credentials"
+    TWITCH_CLIENT_ID = os.environ.get("TWITCH_CLIENT_ID")
+    TWITCH_CLIENT_SECRET = os.environ.get("TWITCH_CLIENT_SECRET")
+    get_token_url = f"https://id.twitch.tv/oauth2/token?client_id={TWITCH_CLIENT_ID}&client_secret={TWITCH_CLIENT_SECRET}&grant_type=client_credentials"
     try:
         log.info("Sending twitch oauth token request.")
         response = httpx.post(get_token_url)
@@ -28,11 +28,11 @@ def get_twitch_bearer_token() -> Optional[str]:
 
 async def get_userid_from_username(username: str) -> str:
     load_dotenv("./appdata/.env", override=True)
-    CLIENT_ID = os.environ.get("CLIENT_ID")
+    TWITCH_CLIENT_ID = os.environ.get("TWITCH_CLIENT_ID")
     TWITCH_TOKEN = os.environ.get("TWITCH_TOKEN")
     headers = {
         "Authorization": f"Bearer {TWITCH_TOKEN}",
-        "Client-Id": f"{CLIENT_ID}",
+        "Client-Id": f"{TWITCH_CLIENT_ID}",
     }
     url = f"https://api.twitch.tv/helix/users?login={username}"
     try:
@@ -55,11 +55,11 @@ async def get_live_streams_by_usernames(
         log.info(f"Couldn't get streams.")
         return live, False
     load_dotenv("./appdata/.env", override=True)
-    CLIENT_ID = os.environ.get("CLIENT_ID")
+    TWITCH_CLIENT_ID = os.environ.get("TWITCH_CLIENT_ID")
     TWITCH_TOKEN = os.environ.get("TWITCH_TOKEN")
     headers = {
         "Authorization": f"Bearer {TWITCH_TOKEN}",
-        "Client-Id": f"{CLIENT_ID}",
+        "Client-Id": f"{TWITCH_CLIENT_ID}",
     }
     url = f"https://api.twitch.tv/helix/streams?"
     for username in usernames:
@@ -70,9 +70,9 @@ async def get_live_streams_by_usernames(
         response = httpx.get(url, headers=headers)
         log.debug(json.dumps(response.json(), indent=4))
         log.debug(json.dumps(dict(response.headers), indent=4))
+        for stream in response.json()["data"]:
+            live.append(stream["user_login"])
+        return live, True
     except:
         log.info(f"Couldn't get streams.")
         return live, False
-    for stream in response.json()["data"]:
-        live.append(stream["user_login"])
-    return live, True
