@@ -53,7 +53,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.03...")
+        log.info("Token found. Initializing mumbot v1.04...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -413,6 +413,10 @@ async def twitch_polling():
                                 utils.get_announce_channel(bot.con, guild.id),
                                 "./appdata/frame.jpg",
                                 message,
+                            )
+                        else:
+                            await bot.send_message(
+                                utils.get_announce_channel(bot.con, guild.id), message
                             )
                 stream.was_live = True
         first = False
