@@ -1,0 +1,13 @@
+{
+    "name": "setchannel",
+    "type": 1,
+    "description": "[ADMIN] Sets the announce channel",
+    "options": [
+        {
+            "name": "id",
+            "description": "channel id of the announce channel",
+            "type": 3,
+            "required": true
+        }
+    ]
+}

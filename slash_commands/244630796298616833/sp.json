@@ -1,0 +1,13 @@
+{
+    "type": 1,
+    "name": "sp",
+    "description": "Generate a streampic",
+    "options": [
+        {
+            "name": "username",
+            "description": "stream",
+            "type": 3,
+            "required": true
+        }
+    ]
+}

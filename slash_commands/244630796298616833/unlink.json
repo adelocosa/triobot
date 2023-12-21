@@ -1,0 +1,13 @@
+{
+    "type": 1,
+    "name": "unlink",
+    "description": "Remove a linked stream",
+    "options": [
+        {
+            "name": "url",
+            "description": "stream url",
+            "type": 3,
+            "required": true
+        }
+    ]
+}

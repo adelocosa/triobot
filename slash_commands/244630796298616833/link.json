@@ -1,0 +1,13 @@
+{
+    "type": 1,
+    "name": "link",
+    "description": "Link a stream to your discord account",
+    "options": [
+        {
+            "name": "url",
+            "description": "stream url",
+            "type": 3,
+            "required": true
+        }
+    ]
+}
