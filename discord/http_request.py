@@ -17,11 +17,21 @@ class HTTPRequest:
     APP_ID = os.environ.get("APP_ID")
     API_URL: ClassVar[str] = "https://discord.com/api/v10"
 
-    def __init__(self):
+    def __init__(self, headers: None | dict[str, str] = None):
         self.response: None | httpx.Response = None
+        self.headers = headers
+        if not headers:
+            self.headers = {
+                "Authorization": f"Bot {self.TOKEN}",
+                "User-Agent": "mumbot (http://mumblecrew.com, 2.0)",
+            }
 
     async def send(
-        self, method: str, route: str, payload: Payload = None, file=None
+        self,
+        method: str,
+        route: str,
+        payload: Payload = None,
+        file=None,
     ) -> httpx.Response:
         # get correct args for request based on method
         payload_format = {
@@ -33,15 +43,10 @@ class HTTPRequest:
         }
         url = self.API_URL + route
 
-        headers = {
-            "Authorization": f"Bot {self.TOKEN}",
-            "User-Agent": "mumbot (http://mumblecrew.com, 2.0)",
-        }
-
-        async with httpx.AsyncClient(headers=headers) as http_client:
+        async with httpx.AsyncClient(headers=self.headers) as http_client:
             log.info(f"Sending HTTP {inspect.stack()[1][3]} request.")
             log.debug(json.dumps(payload, indent=4))
-            log.debug(headers)
+            log.debug(self.headers)
             if not file:
                 self.response = await http_client.request(
                     method, url, **payload_format[method]
@@ -76,6 +81,13 @@ class HTTPRequest:
         route = f"/applications/{self.APP_ID}/guilds/{guild_id}/commands"
         method = "GET"
         return await self.send(method, route)
+
+    async def set_guild_application_command_permissions(
+        self, guild_id: str, command_id: str, payload: Payload = None
+    ) -> httpx.Response:
+        route = f"/applications/{self.APP_ID}/guilds/{guild_id}/commands/{command_id}/permissions"
+        method = "PUT"
+        return await self.send(method, route, payload)
 
     async def interaction_response(
         self, interaction_id: str, interaction_token: str, payload: Payload = None

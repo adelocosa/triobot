@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from .channel import Channel
 from .guild import Guild
-from .interaction import SlashCommand
+from .interaction import Interaction
 from .member import GuildMember
 from .user import User
 
@@ -124,7 +124,7 @@ class Event:
 
     async def handle_interaction_create(self):
         guild = self.client.guilds[self.data["guild_id"]]
-        interaction = SlashCommand(guild, self.data)
+        interaction = Interaction(guild, self.data)
         try:
             await self.client.interaction_listeners[interaction.name](interaction)
         except KeyError:

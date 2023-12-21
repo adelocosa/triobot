@@ -4,6 +4,9 @@ import logging
 import random
 import time
 import json
+import httpx
+import os
+from dotenv import load_dotenv
 from typing import TYPE_CHECKING, Callable, Optional, Any
 
 import trio
@@ -13,7 +16,7 @@ from .http_request import HTTPRequest
 
 if TYPE_CHECKING:
     from .guild import Guild
-    from .interaction import SlashCommand
+    from .interaction import Interaction
     from .user import User
 
 log = logging.getLogger(__name__)
@@ -25,6 +28,7 @@ class Client:
 
     def __init__(self, TOKEN: str):
         self.TOKEN = TOKEN
+        self.bearer: None | str = None
         self.user: None | User = None
         self.sequence: None | int = None
         self.session_id: None | str = None
@@ -35,8 +39,31 @@ class Client:
         self.interaction_listeners: dict[str, Callable] = {}
         self.tasks: list[Callable] = []
 
+    def get_bearer_token(self) -> None | str:
+        load_dotenv("./appdata/.env", override=True)
+        APP_ID = os.environ.get("APP_ID")
+        APP_SECRET = os.environ.get("APP_SECRET")
+        assert isinstance(APP_ID, str)
+        assert isinstance(APP_SECRET, str)
+        data = {
+            "grant_type": "client_credentials",
+            "scope": "applications.commands applications.commands.permissions.update",
+        }
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        r = httpx.post(
+            "%s/oauth2/token" % "https://discord.com/api/v10",
+            data=data,
+            headers=headers,
+            auth=(APP_ID, APP_SECRET),
+        )
+        r.raise_for_status()
+        return r.json().get("access_token", None)
+
     def connect(self):
         while True:
+            self.bearer = self.get_bearer_token()
+            assert isinstance(self.bearer, str)
+            log.info(f"Got bearer token: {self.bearer}")
             self.gateway_channel: None | trio.MemorySendChannel = None
             self.connection = GatewayConnection(self, self.TOKEN)
             log.info("Attempting to connect...")
@@ -90,20 +117,20 @@ class Client:
                 log.info(f"Started task {task.__name__}.")
 
     async def interaction_response(
-        self, interaction: SlashCommand, message: str, ephemeral: bool = False
+        self, interaction: Interaction, message: str, ephemeral: bool = False
     ):
         flags = 64 if ephemeral else 0
         payload = {"type": 4, "data": {"content": message, "flags": flags}}
         r = HTTPRequest()
         await r.interaction_response(interaction.id, interaction.token, payload)
 
-    async def edit_interaction_response(self, interaction: SlashCommand, message: str):
+    async def edit_interaction_response(self, interaction: Interaction, message: str):
         payload = {"content": message}
         r = HTTPRequest()
         await r.edit_interaction_response(interaction.token, payload)
 
     async def edit_interaction_response_with_file(
-        self, interaction: SlashCommand, filename: str, message: str
+        self, interaction: Interaction, filename: str, message: str
     ):
         pj = {"content": message}
         pj2 = {"payload_json": json.dumps(pj)}

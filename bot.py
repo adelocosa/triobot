@@ -6,6 +6,8 @@ import sqlite3
 import random
 import numpy
 import cv2
+import json
+import httpx
 from PIL import Image
 from streamlink.session import Streamlink
 from streamlink.options import Options
@@ -45,6 +47,7 @@ log.addHandler(file_log)
 class Mumbot(discord.Client):
     def __init__(self):
         load_dotenv("./appdata/.env", override=True)
+        self.owner_id = os.environ.get("OWNER_ID")
         BOT_TOKEN = os.environ.get("BOT_TOKEN")
         print(BOT_TOKEN)
         TWITCH_TOKEN = utils.get_twitch_bearer_token()
@@ -60,6 +63,7 @@ class Mumbot(discord.Client):
         for stream in streams:
             self.user_streams[stream[0]].append(stream[1])
         self.color_list: list[sRGBColor] = []
+        self.commands = {}
 
     def initialize_database(self) -> sqlite3.Connection:
         sqlite3.register_adapter(utils.Stream, utils.adapt_stream)
@@ -70,6 +74,47 @@ class Mumbot(discord.Client):
         utils.create_userstreams_table(con)
         utils.create_guilds_table(con)
         return con
+
+    async def register_slash_commands(self, guild_id: str):
+        path = f"./slash_commands/{guild_id}"
+        if not os.path.exists(path):
+            return
+        r = discord.HTTPRequest()
+        await r.get_guild_application_commands(guild_id)
+        if not isinstance(r.response, httpx.Response):
+            return
+        to_delete = set()
+        available = {
+            x.split(".")[0] for x in os.listdir(f"./slash_commands/{guild_id}")
+        }
+        registered = {x["name"] for x in r.response.json()}
+        log.info(f"Available slash commands: {available}")
+        log.info(f"Registered slash commands: {registered}")
+        for command in r.response.json():
+            self.commands[command["name"]] = command["id"]
+            if command["name"] in available:
+                available.remove(command["name"])
+            else:
+                to_delete.add(command["id"])
+        for command in available:
+            with open(f"./slash_commands/349396810428710912/{command}.json") as f:
+                payload = json.loads(f.read())
+                await r.create_guild_application_command(guild_id, payload)
+                log.info(f"Registered slash command: {command}")
+        for command in to_delete:
+            await r.delete_guild_application_command(guild_id, command)
+            log.info(f"Unregistered orphaned slash command: {command}")
+
+    async def set_command_permissions(self, guild_id: str, command: str):
+        headers = {"Authorization": f"Bearer {self.bearer}"}
+        payload = {
+            "permissions": [{"id": self.owner_id, "type": 2, "permission": True}]
+        }
+        r = discord.HTTPRequest(headers)
+        await r.set_guild_application_command_permissions(
+            guild_id, self.commands[command], payload
+        )
+        log.info(f"Set permissions for {command} command.")
 
     def get_guild_streams(self, guild_id: str) -> list[utils.Stream]:
         streams = []
@@ -124,6 +169,15 @@ bot = Mumbot()
 
 
 @bot.event
+async def guild_create(data: dict[str, Any]):
+    await bot.update_presence(*bot.generate_presence_args())
+    await bot.register_slash_commands(data["id"])
+    admin_commands = ["rainbow", "setchannel"]
+    for command in admin_commands:
+        await bot.set_command_permissions(data["id"], command)
+
+
+@bot.event
 async def voice_state_update(data: dict[str, Any]):
     guild_id = data["guild_id"]
     member = bot.guilds[guild_id].members[data["user_id"]]
@@ -143,7 +197,7 @@ async def voice_state_update(data: dict[str, Any]):
 
 
 @bot.slash_command
-async def setchannel(interaction: discord.SlashCommand):
+async def setchannel(interaction: discord.Interaction):
     guild_id = interaction.guild.id
     channel_id = interaction.data["options"][0]["value"]
     utils.insert_announce_channel(bot.con, guild_id, channel_id)
@@ -152,7 +206,7 @@ async def setchannel(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
-async def rainbow(interaction: discord.SlashCommand):
+async def rainbow(interaction: discord.Interaction):
     guild_id = interaction.guild.id
     role_id = interaction.data["options"][0]["value"]
     utils.insert_rainbow_role(bot.con, guild_id, role_id)
@@ -161,7 +215,7 @@ async def rainbow(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
-async def live(interaction: discord.SlashCommand):
+async def live(interaction: discord.Interaction):
     message = "Currently live:"
     zero = True
     for member in interaction.guild.members.values():
@@ -189,7 +243,7 @@ async def live(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
-async def link(interaction: discord.SlashCommand):
+async def link(interaction: discord.Interaction):
     ephemeral = True
     userid = interaction.member.user.id
     url = interaction.data["options"][0]["value"]
@@ -210,7 +264,7 @@ async def link(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
-async def unlink(interaction: discord.SlashCommand):
+async def unlink(interaction: discord.Interaction):
     ephemeral = True
     userid = interaction.member.user.id
     url = interaction.data["options"][0]["value"]
@@ -229,7 +283,7 @@ async def unlink(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
-async def mystreams(interaction: discord.SlashCommand):
+async def mystreams(interaction: discord.Interaction):
     ephemeral = True
     userid = interaction.member.user.id
     x = 1
@@ -242,7 +296,7 @@ async def mystreams(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
-async def streampic(interaction: discord.SlashCommand):
+async def streampic(interaction: discord.Interaction):
     streamname = interaction.data["options"][0]["value"]
     session = Streamlink()
     options = Options()
@@ -289,14 +343,8 @@ async def streampic(interaction: discord.SlashCommand):
 
 
 @bot.slash_command
-async def sp(interaction: discord.SlashCommand):
+async def sp(interaction: discord.Interaction):
     await streampic(interaction)
-
-
-@bot.task
-async def set_initial_presence():
-    await trio.sleep(2)
-    await bot.update_presence(*bot.generate_presence_args())
 
 
 @bot.task
