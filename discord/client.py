@@ -57,6 +57,9 @@ class Client:
             auth=(APP_ID, APP_SECRET),
         )
         r.raise_for_status()
+        log.debug(json.dumps(dict(r.headers), indent=4))
+        if r.status_code != 204:
+            log.debug(json.dumps(r.json(), indent=4))
         return r.json().get("access_token", None)
 
     def connect(self):

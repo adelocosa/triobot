@@ -97,7 +97,7 @@ class Mumbot(discord.Client):
             else:
                 to_delete.add(command["id"])
         for command in available:
-            with open(f"./slash_commands/349396810428710912/{command}.json") as f:
+            with open(f"./slash_commands/{guild_id}/{command}.json") as f:
                 payload = json.loads(f.read())
                 await r.create_guild_application_command(guild_id, payload)
                 log.info(f"Registered slash command: {command}")
@@ -105,16 +105,23 @@ class Mumbot(discord.Client):
             await r.delete_guild_application_command(guild_id, command)
             log.info(f"Unregistered orphaned slash command: {command}")
 
-    async def set_command_permissions(self, guild_id: str, command: str):
+    async def set_command_permissions(self, guild_id: str, command_name: str):
+        r = discord.HTTPRequest()
+        await r.get_guild_application_commands(guild_id)
+        if not isinstance(r.response, httpx.Response):
+            return
+        for command in r.response.json():
+            self.commands[command["name"]] = command["id"]
+
         headers = {"Authorization": f"Bearer {self.bearer}"}
         payload = {
             "permissions": [{"id": self.owner_id, "type": 2, "permission": True}]
         }
         r = discord.HTTPRequest(headers)
         await r.set_guild_application_command_permissions(
-            guild_id, self.commands[command], payload
+            guild_id, self.commands[command_name], payload
         )
-        log.info(f"Set permissions for {command} command.")
+        log.info(f"Set permissions for {command_name} command.")
 
     def get_guild_streams(self, guild_id: str) -> list[utils.Stream]:
         streams = []
@@ -301,8 +308,8 @@ async def streampic(interaction: discord.Interaction):
     session = Streamlink()
     options = Options()
     load_dotenv("./appdata/.env", override=True)
-    TURBO_OAUTH = os.environ.get("TURBO_OAUTH")
-    options.set("api-header", [("Authorization", f"OAuth {TURBO_OAUTH}")])
+    TWITCH_TURBO_OAUTH = os.environ.get("TWITCH_TURBO_OAUTH")
+    options.set("api-header", [("Authorization", f"OAuth {TWITCH_TURBO_OAUTH}")])
     options.set("low-latency", True)
     message = f"Generating a streampic from *{streamname}*..."
     await bot.interaction_response(interaction, message)
