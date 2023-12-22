@@ -76,9 +76,11 @@ class Guild:
                 user.update_activities(presence_data["activities"])
         return
 
-    async def request_emojis(self) -> dict[str, Emoji]:
+    async def request_emojis(self) -> None | dict[str, Emoji]:
         request = HTTPRequest()
         response = await request.list_guild_emojis(self.id)
+        if not response:
+            return None
         if response.status_code != 200:
             return self.emojis
         self.emojis = self.parse_emojis(response.json())

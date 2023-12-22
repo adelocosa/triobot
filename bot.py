@@ -78,31 +78,13 @@ class Mumbot(discord.Client):
         path = f"./slash_commands/{guild_id}"
         if not os.path.exists(path):
             return
+        commands: list[dict[str, Any]] = []
+        for filename in os.listdir(path):
+            file_path = os.path.join(path, filename)
+            with open(file_path, 'r') as file:
+                commands.append(json.loads(file.read()))
         r = discord.HTTPRequest()
-        await r.get_guild_application_commands(guild_id)
-        if not isinstance(r.response, httpx.Response):
-            return
-        to_delete = set()
-        available = {
-            x.split(".")[0] for x in os.listdir(f"./slash_commands/{guild_id}")
-        }
-        registered = {x["name"] for x in r.response.json()}
-        log.info(f"Available slash commands: {available}")
-        log.info(f"Registered slash commands: {registered}")
-        for command in r.response.json():
-            self.commands[command["name"]] = command["id"]
-            if command["name"] in available:
-                available.remove(command["name"])
-            else:
-                to_delete.add(command["id"])
-        for command in available:
-            with open(f"./slash_commands/{guild_id}/{command}.json") as f:
-                payload = json.loads(f.read())
-                await r.create_guild_application_command(guild_id, payload)
-                log.info(f"Registered slash command: {command}")
-        for command in to_delete:
-            await r.delete_guild_application_command(guild_id, command)
-            log.info(f"Unregistered orphaned slash command: {command}")
+        await r.bulk_overwrite_guild_application_commands(guild_id, commands)
 
     async def set_command_permissions(self, guild_id: str, command_name: str):
         r = discord.HTTPRequest()
