@@ -2,7 +2,7 @@
     "name": "rainbow",
     "type": 1,
     "description": "[ADMIN] Sets the rainbow role",
-    "default_permissions": "0",
+    "default_member_permissions": "0",
     "options": [
         {
             "name": "id",

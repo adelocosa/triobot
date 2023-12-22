@@ -53,7 +53,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.04...")
+        log.info("Token found. Initializing mumbot v1.06...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -81,7 +81,7 @@ class Mumbot(discord.Client):
         commands: list[dict[str, Any]] = []
         for filename in os.listdir(path):
             file_path = os.path.join(path, filename)
-            with open(file_path, 'r') as file:
+            with open(file_path, "r") as file:
                 commands.append(json.loads(file.read()))
         r = discord.HTTPRequest()
         await r.bulk_overwrite_guild_application_commands(guild_id, commands)

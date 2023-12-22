@@ -2,7 +2,7 @@
     "name": "setchannel",
     "type": 1,
     "description": "[ADMIN] Sets the announce channel",
-    "default_permissions": "0",
+    "default_member_permissions": "0",
     "options": [
         {
             "name": "id",
