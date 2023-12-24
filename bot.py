@@ -53,7 +53,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.06...")
+        log.info("Token found. Initializing mumbot v1.07...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -344,7 +344,6 @@ async def streampic(interaction: discord.Interaction):
         imgdata = capture.read()[1]
         imgdata = imgdata[..., ::-1]  # BGR -> RGB
         img = Image.fromarray(imgdata)
-        img.thumbnail((320, 180))
         img.save("./appdata/frame.jpg")
         message = (
             f"Please enjoy this {utils.get_adjective()} streampic from *{streamname}*."
