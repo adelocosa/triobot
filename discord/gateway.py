@@ -54,8 +54,9 @@ class ActivityType(IntEnum):
 
 
 class GatewayConnection:
-    def __init__(self, client: Client, bot_token: str):
+    def __init__(self, client: Client, bot_token: str, url: str):
         self.client = client
+        self.url = url
         self.token = bot_token
         self.zlib = zlib.decompressobj()
         self.buffer = bytearray()
@@ -67,7 +68,7 @@ class GatewayConnection:
     async def connect(self) -> None:
         try:
             async with open_websocket_url(
-                "wss://gateway.discord.gg/?v=10&encoding=json&compress=zlib-stream",
+                f"{self.url}/?v=10&encoding=json&compress=zlib-stream",
                 connect_timeout=5,
                 disconnect_timeout=5,
             ) as ws:

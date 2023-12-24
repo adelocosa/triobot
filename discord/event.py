@@ -44,6 +44,7 @@ class Event:
 
     def handle_ready(self):
         self.client.session_id = self.data["session_id"]
+        self.client.resume_url = self.data["resume_gateway_url"]
         self.client.user = User(self.data["user"])
         self.client.users[self.client.user.id] = self.client.user
 

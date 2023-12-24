@@ -28,6 +28,8 @@ class Client:
 
     def __init__(self, TOKEN: str):
         self.TOKEN = TOKEN
+        self.gateway_url = "wss://gateway.discord.gg"
+        self.resume_url: None | str = None
         self.bearer: None | str = None
         self.user: None | User = None
         self.sequence: None | int = None
@@ -68,7 +70,8 @@ class Client:
             assert isinstance(self.bearer, str)
             log.info(f"Got bearer token: {self.bearer}")
             self.gateway_channel: None | trio.MemorySendChannel = None
-            self.connection = GatewayConnection(self, self.TOKEN)
+            url = self.resume_url if self.resume_url else self.gateway_url
+            self.connection = GatewayConnection(self, self.TOKEN, url)
             log.info("Attempting to connect...")
             trio.run(self.connection.connect)
             log.warning(f"Disconnected! Reconnecting in {self.delay:.1f} seconds...")
@@ -88,6 +91,7 @@ class Client:
         self.user = None
         self.sequence = None
         self.session_id = None
+        self.resume_url = None
         self.guilds = {}
         self.users = {}
 
