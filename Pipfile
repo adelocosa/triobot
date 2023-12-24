@@ -12,6 +12,7 @@ streamlink = "*"
 colormath = "*"
 pillow = "*"
 opencv-python-headless = "*"
+cffi = "*"
 
 [dev-packages]
 
