@@ -168,10 +168,10 @@ class GatewayConnection:
                 # if d = True, resume | if d = False, identify
                 if not data:
                     self.client.clear_state()
-                await self.ws.aclose(code=2000, reason="Received opcode 9 (INVALID_SESSION).")
+                await self.ws.aclose(reason="Received opcode 9 (INVALID_SESSION).")
 
             elif opcode == Opcode.RECONNECT:
-                await self.ws.aclose(reason="Received opcode 7 (RECONNECT).")
+                await self.ws.aclose(code=2000, reason="Received opcode 7 (RECONNECT).")
 
             elif opcode == Opcode.HEARTBEAT:
                 await send_gateway_message.send(self.build_heartbeat())

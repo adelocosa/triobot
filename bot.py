@@ -53,7 +53,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.07...")
+        log.info("Token found. Initializing mumbot v1.08...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
