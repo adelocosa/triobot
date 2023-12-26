@@ -10,9 +10,9 @@ python-dotenv = "*"
 httpx = "*"
 streamlink = "*"
 colormath = "*"
-pillow = "*"
 opencv-python-headless = "*"
 cffi = "*"
+pillow = "==10.0.1"
 
 [dev-packages]
 
