@@ -55,7 +55,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.10...")
+        log.info("Token found. Initializing mumbot v1.11...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -251,11 +251,11 @@ async def color(interaction: discord.Interaction):
         return message
 
     def _random(interaction: discord.Interaction) -> str:
-        (r, g, b) = (random.randint(0, 255) for _ in range(3))
-        color = sRGBColor(r, g, b, is_upscaled=True)
-        utils.generate_color_swatch(color)
-        name = utils.get_color_name(color)
-        message = f"Please enjoy this {utils.get_adjective()} sample of *{name}*."
+        with open("colornames.json", encoding="utf-8") as colornames:
+            colornames = json.loads(colornames.read())
+        color = random.choice(colornames)
+        utils.generate_color_swatch(sRGBColor.new_from_rgb_hex(color["hex"]))
+        message = f"Please enjoy this {utils.get_adjective()} sample of *{color["name"]}*."
         return message
 
     await bot.interaction_response(interaction, "Looking for your color...")
