@@ -12,7 +12,7 @@ from PIL import Image
 from streamlink.session import Streamlink
 from streamlink.options import Options
 from colormath.color_conversions import convert_color
-from colormath.color_diff import delta_e_cie2000
+from colormath.color_diff import delta_e_cie1976, delta_e_cie2000
 from colormath.color_objects import LabColor, sRGBColor
 from collections import defaultdict
 from typing import Any
@@ -42,6 +42,7 @@ log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 log.addHandler(console_log)
 log.addHandler(file_log)
+logging.getLogger("colormath").setLevel(logging.WARNING)
 
 
 class Mumbot(discord.Client):
@@ -53,7 +54,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.08...")
+        log.info("Token found. Initializing mumbot v1.09...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -62,6 +63,9 @@ class Mumbot(discord.Client):
         for stream in streams:
             self.user_streams[stream[0]].append(stream[1])
         self.color_list: list[sRGBColor] = []
+        with open("./appdata/colornames.json", encoding="utf-8") as colornames:
+            colornames = colornames.read()
+        self.colornames = json.loads(colornames)
         self.commands = {}
 
     def initialize_database(self) -> sqlite3.Connection:
@@ -358,6 +362,28 @@ async def streampic(interaction: discord.Interaction):
 @bot.slash_command
 async def sp(interaction: discord.Interaction):
     await streampic(interaction)
+
+
+@bot.slash_command
+async def namecolor(interaction: discord.Interaction):
+    role_id = utils.get_rainbow_role(bot.con, interaction.guild.id)
+    if not role_id:
+        await bot.interaction_response(interaction, "rainbow names aren't active!")
+        return
+    await bot.interaction_response(interaction, "Thinking of a name for this color...")
+    role = interaction.guild.roles[role_id]
+    current_color = convert_color(role.srgb_color, LabColor)
+    lowest = (999, {})
+    for color in bot.colornames:
+        srgb = sRGBColor.new_from_rgb_hex(color["hex"])
+        lab = convert_color(srgb, LabColor)
+        delta_e = delta_e_cie1976(current_color, lab)
+        if delta_e < lowest[0]:
+            lowest = (delta_e, color)
+    await bot.edit_interaction_response(
+        interaction,
+        f'I call this *{lowest[1]["name"]}*. ({role.srgb_color.get_rgb_hex()})',
+    )
 
 
 @bot.task

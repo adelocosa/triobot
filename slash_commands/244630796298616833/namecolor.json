@@ -1,0 +1,5 @@
+{
+    "name": "namecolor",
+    "type": 1,
+    "description": "Gets the current name color"
+}
