@@ -8,7 +8,8 @@ import numpy
 import cv2
 import json
 import httpx
-from PIL import Image
+import difflib
+from PIL import Image, ImageDraw
 from streamlink.session import Streamlink
 from streamlink.options import Options
 from colormath.color_conversions import convert_color
@@ -54,7 +55,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.09...")
+        log.info("Token found. Initializing mumbot v1.10...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -63,9 +64,6 @@ class Mumbot(discord.Client):
         for stream in streams:
             self.user_streams[stream[0]].append(stream[1])
         self.color_list: list[sRGBColor] = []
-        with open("colornames.json", encoding="utf-8") as colornames:
-            colornames = colornames.read()
-        self.colornames = json.loads(colornames)
         self.commands = {}
 
     def initialize_database(self) -> sqlite3.Connection:
@@ -182,7 +180,6 @@ bot = Mumbot()
 # to implement for feature parity: (* critical)
 # - ding
 # - streamgif
-# - /color random, specific
 
 
 @bot.event
@@ -211,6 +208,65 @@ async def voice_state_update(data: dict[str, Any]):
         await bot.update_presence(*bot.generate_presence_args())
         member.was_live = False
     return
+
+
+@bot.slash_command
+async def color(interaction: discord.Interaction):
+    def _name(interaction: discord.Interaction) -> str:
+        name: str = interaction.data["options"][0]["options"][0]["value"]
+        with open("colornames.json", encoding="utf-8") as colornames:
+            colornames = json.loads(colornames.read())
+        for color in colornames:
+            if color["name"].lower() == name.lower():
+                srgb_color = sRGBColor.new_from_rgb_hex(color["hex"])
+                name = color["name"]
+                extra = "P"
+                break
+        else:
+            extra = f"I couldn't find *{name}*, but p"
+            best = 0
+            bestcolor: dict[str, str] = {}
+            for color in colornames:
+                ratio = difflib.SequenceMatcher(
+                    None, name.lower(), color["name"].lower()
+                ).ratio()
+                if ratio > best:
+                    bestcolor = color
+                    best = ratio
+            srgb_color = sRGBColor.new_from_rgb_hex(bestcolor["hex"])
+            name = bestcolor["name"]
+        utils.generate_color_swatch(srgb_color)
+        message = f"{extra}lease enjoy this {utils.get_adjective()} sample of *{name}*."
+        return message
+
+    def _hex(interaction: discord.Interaction) -> None | str:
+        hex = interaction.data["options"][0]["options"][0]["value"]
+        try:
+            color = sRGBColor.new_from_rgb_hex(hex)
+        except:
+            return
+        utils.generate_color_swatch(color)
+        name = utils.get_color_name(color)
+        message = f"Please enjoy this {utils.get_adjective()} sample of *{name}*."
+        return message
+
+    def _random(interaction: discord.Interaction) -> str:
+        (r, g, b) = (random.randint(0, 255) for _ in range(3))
+        color = sRGBColor(r, g, b, is_upscaled=True)
+        utils.generate_color_swatch(color)
+        name = utils.get_color_name(color)
+        message = f"Please enjoy this {utils.get_adjective()} sample of *{name}*."
+        return message
+
+    await bot.interaction_response(interaction, "Looking for your color...")
+    subcommand = interaction.data["options"][0]["name"]
+    message = locals()[f"_{subcommand}"](interaction)
+    if message:
+        await bot.edit_interaction_response_with_file(
+            interaction, "./appdata/color.png", message
+        )
+    else:
+        await bot.edit_interaction_response(interaction, "invalid hex string")
 
 
 @bot.slash_command
@@ -372,17 +428,10 @@ async def namecolor(interaction: discord.Interaction):
         return
     await bot.interaction_response(interaction, "Thinking of a name for this color...")
     role = interaction.guild.roles[role_id]
-    current_color = convert_color(role.srgb_color, LabColor)
-    lowest = (999, {})
-    for color in bot.colornames:
-        srgb = sRGBColor.new_from_rgb_hex(color["hex"])
-        lab = convert_color(srgb, LabColor)
-        delta_e = delta_e_cie1976(current_color, lab)
-        if delta_e < lowest[0]:
-            lowest = (delta_e, color)
+    color_name = utils.get_color_name(role.srgb_color)
     await bot.edit_interaction_response(
         interaction,
-        f'I call this *{lowest[1]["name"]}*. ({role.srgb_color.get_rgb_hex()})',
+        f"I call this *{color_name}*. ({role.srgb_color.get_rgb_hex()})",
     )
 
 
