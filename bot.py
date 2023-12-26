@@ -63,7 +63,7 @@ class Mumbot(discord.Client):
         for stream in streams:
             self.user_streams[stream[0]].append(stream[1])
         self.color_list: list[sRGBColor] = []
-        with open("./appdata/colornames.json", encoding="utf-8") as colornames:
+        with open("colornames.json", encoding="utf-8") as colornames:
             colornames = colornames.read()
         self.colornames = json.loads(colornames)
         self.commands = {}
@@ -182,7 +182,7 @@ bot = Mumbot()
 # to implement for feature parity: (* critical)
 # - ding
 # - streamgif
-# - /color random, role, specific
+# - /color random, specific
 
 
 @bot.event
