@@ -126,7 +126,7 @@ class Event:
     async def handle_interaction_create(self):
         guild = self.client.guilds[self.data["guild_id"]]
         interaction = Interaction(guild, self.data)
-        try:
+        if interaction.name in self.client.interaction_listeners.keys():
             await self.client.interaction_listeners[interaction.name](interaction)
-        except KeyError:
+        else:
             log.debug(f"Received unknown slash command '{interaction.name}'")
