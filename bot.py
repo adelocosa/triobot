@@ -213,7 +213,7 @@ async def voice_state_update(data: dict[str, Any]):
 @bot.slash_command
 async def color(interaction: discord.Interaction):
     def _name(interaction: discord.Interaction) -> str:
-        name: str = interaction.data["options"][0]["options"][0]["value"]
+        name: str = interaction.data["options"][0]["value"]
         with open("colornames.json", encoding="utf-8") as colornames:
             colornames = json.loads(colornames.read())
         for color in colornames:
@@ -240,7 +240,7 @@ async def color(interaction: discord.Interaction):
         return message
 
     def _hex(interaction: discord.Interaction) -> None | str:
-        hex = interaction.data["options"][0]["options"][0]["value"]
+        hex = interaction.data["options"][0]["value"]
         try:
             color = sRGBColor.new_from_rgb_hex(hex)
         except:
@@ -250,7 +250,7 @@ async def color(interaction: discord.Interaction):
         message = f"Please enjoy this {utils.get_adjective()} sample of *{name}*."
         return message
 
-    def _random(interaction: discord.Interaction) -> str:
+    def _random() -> str:
         with open("colornames.json", encoding="utf-8") as colornames:
             colornames = json.loads(colornames.read())
         color = random.choice(colornames)
@@ -258,9 +258,16 @@ async def color(interaction: discord.Interaction):
         message = f"Please enjoy this {utils.get_adjective()} sample of *{color["name"]}*."
         return message
 
-    await bot.interaction_response(interaction, "Looking for your color...")
-    subcommand = interaction.data["options"][0]["name"]
-    message = locals()[f"_{subcommand}"](interaction)
+    value = interaction.data.get("options", None)
+    if not value:
+        await bot.interaction_response(interaction, "Thinking of a color...")
+        message = _random()
+    elif value[0]["value"].startswith('#'):
+        await bot.interaction_response(interaction, "Looking for your color...")
+        message = _hex(interaction)
+    else:
+        await bot.interaction_response(interaction, "Looking for your color...")
+        message = _name(interaction)
     if message:
         await bot.edit_interaction_response_with_file(
             interaction, "./appdata/color.png", message

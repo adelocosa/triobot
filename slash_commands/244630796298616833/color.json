@@ -4,35 +4,10 @@
     "description": "Generate a color swatch",
     "options": [
         {
-            "type": 1,
-            "name": "name",
-            "description": "Get a color by name",
-            "options": [
-                {
-                    "name": "name",
-                    "description": "color name",
-                    "type": 3,
-                    "required": true
-                }
-            ]
-        },
-        {
-            "type": 1,
-            "name": "hex",
-            "description": "Get a color by hex value",
-            "options": [
-                {
-                    "name": "hex",
-                    "description": "#rrggbb",
-                    "type": 3,
-                    "required": true
-                }
-            ]
-        },
-        {
-            "type": 1,
-            "name": "random",
-            "description": "Get a random color"
+            "name": "color",
+            "description": "name or #rrggbb (blank for random)",
+            "type": 3,
+            "required": false
         }
     ]
 }
