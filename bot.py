@@ -55,7 +55,7 @@ class Mumbot(discord.Client):
         assert isinstance(BOT_TOKEN, str)
         assert isinstance(TWITCH_TOKEN, str)
         os.environ["TWITCH_TOKEN"] = TWITCH_TOKEN
-        log.info("Token found. Initializing mumbot v1.11...")
+        log.info("Token found. Initializing mumbot v1.12...")
         super().__init__(BOT_TOKEN)
 
         self.con = self.initialize_database()
@@ -527,6 +527,8 @@ async def rainbow_role():
                         if c2lab.lab_l > 40:
                             break
                     delta_e = delta_e_cie2000(c1lab, c2lab)
+                if delta_e < 1:
+                    delta_e = 1
                 bot.color_list = generate_lab_gradient(
                     current_color, next_color, int(delta_e)
                 )
