@@ -66,9 +66,9 @@ class Client:
 
     def connect(self):
         while True:
-            self.bearer = self.get_bearer_token()
-            assert isinstance(self.bearer, str)
-            log.info(f"Got bearer token: {self.bearer}")
+            # self.bearer = self.get_bearer_token()
+            # assert isinstance(self.bearer, str)
+            # log.info(f"Got bearer token: {self.bearer}")
             self.gateway_channel: None | trio.MemorySendChannel = None
             url = self.resume_url if self.resume_url else self.gateway_url
             self.connection = GatewayConnection(self, self.TOKEN, url)
