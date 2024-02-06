@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 class Client:
     START_DELAY = 1.1
-    MAX_DELAY = 32
+    MAX_DELAY = 60
 
     def __init__(self, TOKEN: str):
         self.TOKEN = TOKEN
@@ -79,10 +79,8 @@ class Client:
             self.increase_delay()
 
     def increase_delay(self):
-        new_delay = int(self.delay) * 2
-        if new_delay != self.MAX_DELAY:
-            new_delay += random.random()
-        self.delay = new_delay
+        if self.delay <= self.MAX_DELAY:
+            self.delay *= 1.5
 
     def reset_delay(self):
         self.delay = self.START_DELAY
